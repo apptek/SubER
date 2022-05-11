@@ -57,8 +57,8 @@ In the general case, subtitle files for the same video can have different number
 See our paper for further details.
 
 To use the Levenshtein method add an `AS-` prefix to the metric name, e.g.:
-```
-$ suber -H hypothesis.srt -R reference.srt --metrics AS-BLEU
+```console
+suber -H hypothesis.srt -R reference.srt --metrics AS-BLEU
 ```
 The `AS-` prefix terminology is taken from [Matusov et al.](https://aclanthology.org/2005.iwslt-1.19.pdf) and stands for "automatic segmentation".
 To use the time-alignment method instead, add a `t-` prefix. This works for all metrics (except for SubER itself which does not require re-segmentation). In particular, we implement `t-BLEU` from [Cherry et al.](https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf). We encode the segmentation method (or lack thereof) in the metric name to explicitly distinguish the different resulting metric scores!
@@ -73,7 +73,7 @@ suber -H hypothesis.srt -R reference.txt --reference-format plain --metrics AS-T
 
 We provide a simple tool to extract sentences from SRT files based on punctuation:
 
-```
+```console
 python -m suber.tools.srt_to_plain -i reference.srt -o reference.txt --sentence-segmentation
 ```
 
