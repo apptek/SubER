@@ -1,0 +1,185 @@
+import unittest
+
+from tests.utilities import create_temporary_file_and_read_it
+
+from suber.data_types import Subtitle
+from suber.metrics.suber import _add_overlap_information_to_hypothesis, _get_independent_parts
+from suber.metrics.lib_ter import _find_shifted_pairs
+
+
+class SubERHelperFunctionTests(unittest.TestCase):
+
+    def test_add_overlap_information_to_hypothesis(self):
+        hypothesis_file_content = """
+            1
+            00:00:00,000 --> 00:00:01,000
+            A B
+
+            2
+            00:00:03,000 --> 00:00:04,000
+            C D E
+
+            3
+            00:00:05,000 --> 00:00:06,000
+            F"""
+
+        reference_file_content = """
+            1
+            00:00:00,500 --> 00:00:01,000
+            A B C
+
+            2
+            00:00:01,500 --> 00:00:02,500
+            D
+
+            3
+            00:00:04,500 --> 00:00:05,500
+            E F
+
+            4
+            00:00:05,700 --> 00:00:05,900
+            G"""
+
+        hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis_file_content)
+        reference_subtitles = create_temporary_file_and_read_it(reference_file_content)
+
+        hypothesis_subtitles = _add_overlap_information_to_hypothesis(hypothesis_subtitles, reference_subtitles)
+
+        self.assertEqual(len(hypothesis_subtitles), 3)
+
+        for word in hypothesis_subtitles[0].word_list:
+            self.assertEqual(word.first_overlapping_reference_position, 0)
+            self.assertEqual(word.last_overlapping_reference_position, 3)
+
+        for word in hypothesis_subtitles[1].word_list:
+            self.assertIsNone(word.first_overlapping_reference_position)
+            self.assertIsNone(word.last_overlapping_reference_position)
+
+        for word in hypothesis_subtitles[2].word_list:
+            self.assertEqual(word.first_overlapping_reference_position, 4)
+            self.assertEqual(word.last_overlapping_reference_position, 7)
+
+    def test_find_shifted_pairs(self):
+
+        def shifted_pairs_helper(hypothesis_file_content, reference_file_content):
+            hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis_file_content)
+            reference_subtitles = create_temporary_file_and_read_it(reference_file_content)
+
+            hypothesis_subtitles = _add_overlap_information_to_hypothesis(hypothesis_subtitles, reference_subtitles)
+
+            all_hypothesis_words = [word for segment in hypothesis_subtitles for word in segment.word_list]
+            all_reference_words = [word for segment in reference_subtitles for word in segment.word_list]
+
+            return list(_find_shifted_pairs(all_hypothesis_words, all_reference_words))
+
+        hypothesis_file_content = """
+            1
+            00:00:00,000 --> 00:00:01,000
+            C A B"""
+
+        reference_file_content = """
+            1
+            00:00:00,500 --> 00:00:01,000
+            A B C"""
+
+        shifted_pairs = shifted_pairs_helper(hypothesis_file_content, reference_file_content)
+
+        self.assertEqual(set(shifted_pairs), {(0, 2, 1), (1, 0, 1), (1, 0, 2), (2, 1, 1)})
+
+    def test_get_independent_parts_empty_input(self):
+        parts = list(_get_independent_parts(hypothesis=[], reference=[]))
+        self.assertFalse(parts)
+
+    def test_get_independent_parts_only_hypothesis(self):
+        hypothesis = [
+            Subtitle(word_list=[], index=1, start_time=0, end_time=1),
+            Subtitle(word_list=[], index=2, start_time=1, end_time=2),
+            Subtitle(word_list=[], index=3, start_time=3, end_time=4)]
+
+        parts = list(_get_independent_parts(hypothesis=hypothesis, reference=[]))
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0], ([hypothesis[0]], []))
+        self.assertEqual(parts[1], ([hypothesis[1]], []))
+        self.assertEqual(parts[2], ([hypothesis[2]], []))
+
+    def test_get_independent_parts_only_reference(self):
+        reference = [
+            Subtitle(word_list=[], index=1, start_time=0, end_time=1),
+            Subtitle(word_list=[], index=2, start_time=1, end_time=2),
+            Subtitle(word_list=[], index=3, start_time=3, end_time=4)]
+
+        parts = list(_get_independent_parts(hypothesis=[], reference=reference))
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0], ([], [reference[0]]))
+        self.assertEqual(parts[1], ([], [reference[1]]))
+        self.assertEqual(parts[2], ([], [reference[2]]))
+
+    def test_get_independent_parts_all_overlaps(self):
+        hypothesis = [
+            Subtitle(word_list=[], index=1, start_time=0, end_time=1),
+            Subtitle(word_list=[], index=2, start_time=1, end_time=2),
+            Subtitle(word_list=[], index=3, start_time=3, end_time=4)]
+
+        parts = list(_get_independent_parts(hypothesis=hypothesis, reference=hypothesis))
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0], ([hypothesis[0]], [hypothesis[0]]))
+        self.assertEqual(parts[1], ([hypothesis[1]], [hypothesis[1]]))
+        self.assertEqual(parts[2], ([hypothesis[2]], [hypothesis[2]]))
+
+    def test_get_independent_parts_overlap_with_one_big(self):
+        hypothesis = [
+            Subtitle(word_list=[], index=1, start_time=0.25, end_time=1),
+            Subtitle(word_list=[], index=2, start_time=1, end_time=2),
+            Subtitle(word_list=[], index=3, start_time=3, end_time=4)]
+
+        reference = [
+            Subtitle(word_list=[], index=1, start_time=0.5, end_time=3.5)]
+
+        parts = list(_get_independent_parts(hypothesis=hypothesis, reference=reference))
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(parts[0], (hypothesis, reference))
+
+        reference = [
+            Subtitle(word_list=[], index=1, start_time=0, end_time=4.5)]
+
+        parts = list(_get_independent_parts(hypothesis=hypothesis, reference=reference))
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(parts[0], (hypothesis, reference))
+
+    def test_get_independent_parts(self):
+        hypothesis = [
+            Subtitle(word_list=[], index=1, start_time=0, end_time=0.25),
+            Subtitle(word_list=[], index=2, start_time=0.25, end_time=0.5),
+            Subtitle(word_list=[], index=3, start_time=0.5, end_time=1),
+            Subtitle(word_list=[], index=4, start_time=1, end_time=1.5),
+            Subtitle(word_list=[], index=5, start_time=1.75, end_time=2),
+            Subtitle(word_list=[], index=6, start_time=4.1, end_time=4.9),
+            Subtitle(word_list=[], index=7, start_time=5.1, end_time=6),
+            Subtitle(word_list=[], index=8, start_time=6, end_time=7),
+            Subtitle(word_list=[], index=9, start_time=7, end_time=8)]
+
+        reference = [
+            Subtitle(word_list=[], index=1, start_time=0.75, end_time=1.1),
+            Subtitle(word_list=[], index=2, start_time=1.4, end_time=2.2),
+            Subtitle(word_list=[], index=3, start_time=3, end_time=3.5),
+            Subtitle(word_list=[], index=4, start_time=3.5, end_time=4),
+            Subtitle(word_list=[], index=5, start_time=4, end_time=5),
+            Subtitle(word_list=[], index=6, start_time=6, end_time=6.5),
+            Subtitle(word_list=[], index=7, start_time=6.5, end_time=7.5),
+            Subtitle(word_list=[], index=8, start_time=8, end_time=9)]
+
+        parts = list(_get_independent_parts(hypothesis=hypothesis, reference=reference))
+        self.assertEqual(len(parts), 9)
+        self.assertEqual(parts[0], (hypothesis[0:1], []))
+        self.assertEqual(parts[1], (hypothesis[1:2], []))
+        self.assertEqual(parts[2], (hypothesis[2:5], reference[:2]))
+        self.assertEqual(parts[3], ([], reference[2:3]))
+        self.assertEqual(parts[4], ([], reference[3:4]))
+        self.assertEqual(parts[5], (hypothesis[5:6], reference[4:5]))
+        self.assertEqual(parts[6], (hypothesis[6:7], []))
+        self.assertEqual(parts[7], (hypothesis[7:9], reference[5:7]))
+        self.assertEqual(parts[8], ([], reference[7:8]))
+
+
+if __name__ == '__main__':
+    unittest.main()
