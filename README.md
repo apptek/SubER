@@ -1,7 +1,7 @@
 # SubER - Subtitle Edit Rate
 
 SubER is an automatic, reference-based, segmentation- and timing-aware edit distance metric to measure quality of subtitle files.
-For a detailed description of the metric and a human post-editing evaluation we refer to our IWSLT 2022 paper (link to be included soon).
+For a detailed description of the metric and a human post-editing evaluation we refer to our [IWSLT 2022 paper](https://arxiv.org/pdf/2205.05805.pdf).
 In addition to the SubER metric, this scoring tool calculates a wide range of established speech recognition and machine translation metrics (WER, BLEU, TER, chrF) directly on subtitle files.
 
 ## Installation
@@ -54,7 +54,7 @@ In the general case, subtitle files for the same video can have different number
 - alignment by minimizing Levenshtein distance ([Matusov et al.](https://aclanthology.org/2005.iwslt-1.19.pdf))
 - time alignment method from [Cherry et al.](https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf)
 
-See our paper for further details.
+See our [paper](https://arxiv.org/pdf/2205.05805.pdf) for further details.
 
 To use the Levenshtein method add an `AS-` prefix to the metric name, e.g.:
 ```console
