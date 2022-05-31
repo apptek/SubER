@@ -22,7 +22,8 @@ $ suber -H hypothesis.srt -R reference.srt
 ```
 The SubER score is printed to stdout in json format. As SubER is an edit rate, lower scores are better. As a rough rule of thumb from our experience, a score lower than 20(%) is very good quality while a score above 40 to 50(%) is bad.
 
-Note that `<i>`, `<b>` and `<u>` formatting tags are ignored if present in the files. All other formatting must be removed from the files before scoring for accurate results.
+Make sure that there is no constant time offset between the timestamps in hypothesis and reference as this will lead to incorrect scores.
+Also, note that `<i>`, `<b>` and `<u>` formatting tags are ignored if present in the files. All other formatting must be removed from the files before scoring for accurate results.
 
 ## Other Metrics
 The SubER tool supports computing the following other metrics directly on subtitle files:
