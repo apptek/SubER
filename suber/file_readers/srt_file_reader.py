@@ -43,6 +43,12 @@ class SRTFileReader(FileReaderBase):
                     if end_time < start_time:
                         raise SRTFormatError(f"End time {end_time} is before start time {start_time}.")
 
+                    if subtitles and subtitles[-1].end_time > start_time:
+                        start_time_string = line.split()[0]
+                        if start_time < subtitles[-1].start_time:
+                            raise SRTFormatError("Subtitles must appear ordered according to their start time, "
+                                                 f"violated by subtitle at '{start_time_string}'.")
+
                     assert word_list is None
                     word_list = []  # start collecting words
 

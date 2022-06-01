@@ -1,6 +1,7 @@
 import unittest
 
 from suber.data_types import LineBreak
+from suber.file_readers.srt_file_reader import SRTFormatError
 from .utilities import create_temporary_file_and_read_it
 
 
@@ -66,6 +67,19 @@ class SRTFileReaderTests(unittest.TestCase):
 
         second_subtititle_text = " ".join(word.string for word in subtitles[1].word_list)
         self.assertEqual(second_subtititle_text, "This is another frame having two lines.")
+
+    def test_overlap_in_time(self):
+        file_content = """
+            1
+            00:00:01,000 --> 00:00:02,000
+            This is a simple first frame.
+
+            2
+            00:00:00,000 --> 00:00:01,000
+            This one is before the first one in time."""
+
+        with self.assertRaises(SRTFormatError):
+            create_temporary_file_and_read_it(file_content)
 
 
 if __name__ == '__main__':

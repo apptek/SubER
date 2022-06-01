@@ -150,7 +150,11 @@ def read_input_file(file_name, file_format):
     else:
         raise ValueError(f"Unknown file format: {file_format}")
 
-    file_content = file_reader.read()
+    try:
+        file_content = file_reader.read()
+    except Exception as e:
+        raise Exception(f"Error reading file '{file_name}'") from e
+
     return file_content
 
 
