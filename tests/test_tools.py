@@ -20,7 +20,7 @@ class SentenceSegmentationTests(unittest.TestCase):
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".srt") as temporary_input_file, \
                 tempfile.NamedTemporaryFile(mode="w+", suffix=".srt") as temporary_output_file:
-            temporary_input_file.writelines(input_file_content)
+            temporary_input_file.write(input_file_content)
             temporary_input_file.flush()
 
             subprocess.run(
@@ -65,10 +65,10 @@ class SentenceSegmentationTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".srt") as temporary_reference_file, \
                 tempfile.NamedTemporaryFile(mode="w", suffix=".srt") as temporary_hypothesis_file, \
                 tempfile.NamedTemporaryFile(mode="w+", suffix=".srt") as temporary_output_file:
-            temporary_reference_file.writelines(reference_file_content)
+            temporary_reference_file.write(reference_file_content)
             temporary_reference_file.flush()
 
-            temporary_hypothesis_file.writelines(hypothesis_file_content)
+            temporary_hypothesis_file.write(hypothesis_file_content)
             temporary_hypothesis_file.flush()
 
             subprocess.run(
@@ -112,10 +112,10 @@ class SentenceSegmentationTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".srt") as temporary_reference_file, \
                 tempfile.NamedTemporaryFile(mode="w", suffix=".srt") as temporary_hypothesis_file, \
                 tempfile.NamedTemporaryFile(mode="w+", suffix=".srt") as temporary_output_file:
-            temporary_reference_file.writelines(reference_file_content)
+            temporary_reference_file.write(reference_file_content)
             temporary_reference_file.flush()
 
-            temporary_hypothesis_file.writelines(hypothesis_file_content)
+            temporary_hypothesis_file.write(hypothesis_file_content)
             temporary_hypothesis_file.flush()
 
             subprocess.run(
