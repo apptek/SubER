@@ -25,3 +25,21 @@ class FileReaderBase:
             return gzip.open(self._file_name, 'rt')
         else:
             return open(self._file_name, 'r')
+
+
+def read_input_file(file_name, file_format) -> List[Segment]:
+    from suber.file_readers import PlainFileReader, SRTFileReader  # here to avoid circular import
+
+    if file_format == "SRT":
+        file_reader = SRTFileReader(file_name)
+    elif file_format == "plain":
+        file_reader = PlainFileReader(file_name)
+    else:
+        raise ValueError(f"Unknown file format: {file_format}")
+
+    try:
+        segments = file_reader.read()
+    except Exception as e:
+        raise Exception(f"Error reading file '{file_name}'") from e
+
+    return segments

@@ -2,7 +2,7 @@
 
 import argparse
 
-from suber.__main__ import read_input_file
+from suber.file_readers import read_input_file
 from suber.hyp_to_ref_alignment import levenshtein_align_hypothesis_to_reference
 from suber.hyp_to_ref_alignment import time_align_hypothesis_to_reference
 from suber.utilities import segment_to_string
