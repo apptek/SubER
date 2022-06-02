@@ -5,7 +5,8 @@ import json
 
 from collections import OrderedDict
 
-from suber.file_readers import PlainFileReader, SRTFileReader
+from suber.file_readers import read_input_file
+from suber.concat_input_files import create_concatenated_segments
 from suber.hyp_to_ref_alignment import levenshtein_align_hypothesis_to_reference
 from suber.hyp_to_ref_alignment import time_align_hypothesis_to_reference
 from suber.metrics.suber import calculate_SubER
@@ -20,8 +21,12 @@ def parse_arguments():
         description="SubER - Subtitle Edit Rate. An automatic, reference-based, segmentation- and timing-aware "
                     "edit distance metric to measure quality of subtitle files. Basic usage: "
                     "'python -m suber -H hypothesis.srt -R reference.srt'")
-    parser.add_argument("-H", "--hypothesis", required=True, help="The input file to score.")
-    parser.add_argument("-R", "--reference", required=True, help="The reference file.")
+    parser.add_argument("-H", "--hypothesis", required=True, nargs="+",
+                        help="The input files to score. Usually just one file, but we support test sets consisting of "
+                             "multiple files.")
+    parser.add_argument("-R", "--reference", required=True, nargs="+",
+                        help="The reference files. Usually just one file, but we support test sets consisting of "
+                             "multiple files.")
     parser.add_argument("-m", "--metrics", nargs="+", default=["SubER"], help="The metrics to compute.")
     parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
     parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
@@ -36,8 +41,12 @@ def main():
     check_file_formats(args.hypothesis_format, args.reference_format, args.metrics)
 
     # A "segment" is a subtitle in case of SRT file input, or a line of text in case of plain input.
-    hypothesis_segments = read_input_file(args.hypothesis, file_format=args.hypothesis_format)
-    reference_segments = read_input_file(args.reference, file_format=args.reference_format)
+    if len(args.hypothesis) == 1 and len(args.reference) == 1:
+        hypothesis_segments = read_input_file(args.hypothesis[0], file_format=args.hypothesis_format)
+        reference_segments = read_input_file(args.reference[0], file_format=args.reference_format)
+    else:
+        hypothesis_segments, reference_segments = create_concatenated_segments(
+            args.hypothesis, args.reference, args.hypothesis_format, args.reference_format)
 
     # Aligned hypotheses, either by Levenshtein distance or timing, are only needed by some metrics so we create them
     # lazily here.
@@ -140,22 +149,6 @@ def check_file_formats(hypothesis_format, reference_format, metrics):
         if ((metric == "SubER" or metric.startswith("t-")) and is_plain_input):
             raise ValueError(f"Metric '{metric}' requires timing information and can only be computed on SRT "
                              f"files (both hypothesis and reference).")
-
-
-def read_input_file(file_name, file_format):
-    if file_format == "SRT":
-        file_reader = SRTFileReader(file_name)
-    elif file_format == "plain":
-        file_reader = PlainFileReader(file_name)
-    else:
-        raise ValueError(f"Unknown file format: {file_format}")
-
-    try:
-        file_content = file_reader.read()
-    except Exception as e:
-        raise Exception(f"Error reading file '{file_name}'") from e
-
-    return file_content
 
 
 if __name__ == "__main__":
