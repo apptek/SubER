@@ -4,11 +4,13 @@ from typing import List
 from suber.data_types import Subtitle, TimedWord, LineBreak
 from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL
 from suber.metrics import lib_ter
+from suber.metrics.suber_statistics import SubERStatisticsCollector
 
 from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer  # only used for "SubER-cased"
 
 
-def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metric="SubER") -> float:
+def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metric="SubER",
+                    statistics_collector: SubERStatisticsCollector = None) -> float:
     """
     Main function to caculate the SubER score. It is computed on normalized text, which means case-insensitive and
     without taking punctuation into account, as we observed higher correlation with human judgements and post-edit
@@ -27,7 +29,8 @@ def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metri
     for part in _get_independent_parts(hypothesis, reference):
         hypothesis_part, reference_part = part
 
-        num_edits, reference_length = _calculate_num_edits_for_part(hypothesis_part, reference_part, normalize)
+        num_edits, reference_length = _calculate_num_edits_for_part(
+            hypothesis_part, reference_part, normalize=normalize, statistics_collector=statistics_collector)
 
         total_num_edits += num_edits
         total_reference_length += reference_length
@@ -43,7 +46,8 @@ def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metri
     return round(SubER_score, 3)
 
 
-def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_part: List[Subtitle], normalize=True):
+def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_part: List[Subtitle], normalize=True,
+                                  statistics_collector: SubERStatisticsCollector = None):
     """
     Returns number of edits (word or break edits and shifts) and the total number of reference tokens (words + breaks)
     for the current part.
@@ -66,7 +70,7 @@ def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_par
     all_reference_words = _add_breaks_as_words(all_reference_words)
 
     num_edits, reference_length = lib_ter.translation_edit_rate(
-        all_hypothesis_words, all_reference_words)
+        all_hypothesis_words, all_reference_words, statistics_collector)
 
     assert reference_length == len(all_reference_words)
 

@@ -10,6 +10,7 @@ from suber.concat_input_files import create_concatenated_segments
 from suber.hyp_to_ref_alignment import levenshtein_align_hypothesis_to_reference
 from suber.hyp_to_ref_alignment import time_align_hypothesis_to_reference
 from suber.metrics.suber import calculate_SubER
+from suber.metrics.suber_statistics import SubERStatisticsCollector
 from suber.metrics.sacrebleu_interface import calculate_sacrebleu_metric
 from suber.metrics.jiwer_interface import calculate_word_error_rate
 from suber.metrics.cer import calculate_character_error_rate
@@ -30,6 +31,9 @@ def parse_arguments():
     parser.add_argument("-m", "--metrics", nargs="+", default=["SubER"], help="The metrics to compute.")
     parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
     parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("--suber-statistics", action="store_true",
+                        help="If set, will create an '#info' field in the output containing statistics about the "
+                             "different edit operations used to calculate the SubER score.")
 
     return parser.parse_args()
 
@@ -54,6 +58,7 @@ def main():
     time_aligned_hypothesis_segments = None
 
     results = OrderedDict()
+    additional_outputs = OrderedDict()
 
     for metric in args.metrics:
         if metric in results:
@@ -96,8 +101,14 @@ def main():
                              f"reference segments.")
 
         if metric.startswith("SubER"):
+            statistics_collector = SubERStatisticsCollector() if args.suber_statistics else None
+
             metric_score = calculate_SubER(
-                hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric)
+                hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
+                statistics_collector=statistics_collector)
+
+            if statistics_collector:
+                additional_outputs[full_metric_name] = statistics_collector.get_statistics()
 
         elif metric.startswith("WER"):
             metric_score = calculate_word_error_rate(
@@ -114,6 +125,9 @@ def main():
                 score_break_at_segment_end=score_break_at_segment_end)
 
         results[full_metric_name] = metric_score
+
+    if additional_outputs:
+        results["#info"] = additional_outputs
 
     json_results = json.dumps(results, indent=4)
     print(json_results)
