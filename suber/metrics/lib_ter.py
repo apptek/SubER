@@ -23,6 +23,7 @@ from typing import List, Tuple, Dict
 
 from suber.data_types import TimedWord
 from suber.constants import END_OF_LINE_SYMBOL, END_OF_BLOCK_SYMBOL
+from suber.metrics.suber_statistics import SubERStatisticsCollector
 
 
 _COST_INS = 1
@@ -48,7 +49,8 @@ _OP_UNDEF = 'x'
 _FLIP_OPS = str.maketrans(_OP_INS + _OP_DEL, _OP_DEL + _OP_INS)
 
 
-def translation_edit_rate(words_hyp: List[TimedWord], words_ref: List[TimedWord]) -> Tuple[int, int]:
+def translation_edit_rate(words_hyp: List[TimedWord], words_ref: List[TimedWord],
+                          statistics_collector: SubERStatisticsCollector = None) -> Tuple[int, int]:
     """Calculate the translation edit rate.
 
     :param words_hyp: Tokenized translation hypothesis.
@@ -58,8 +60,11 @@ def translation_edit_rate(words_hyp: List[TimedWord], words_ref: List[TimedWord]
     n_words_ref = len(words_ref)
     n_words_hyp = len(words_hyp)
     if n_words_ref == 0:
-        # FIXME: This trace here is not used?
-        trace = _OP_DEL * n_words_hyp
+        trace = _flip_trace(_OP_DEL * n_words_hyp)  # Switch to reference to hypothesis direction, see comment below.
+
+        if statistics_collector:
+            statistics_collector.add_data(trace=trace, words_ref=words_ref, words_hyp_shifted=words_hyp, num_shifts=0)
+
         # special treatment of empty refs
         return n_words_hyp, 0
 
@@ -83,6 +88,16 @@ def translation_edit_rate(words_hyp: List[TimedWord], words_ref: List[TimedWord]
 
     edit_distance, trace = cached_ed(input_words)
     total_edits = shifts + edit_distance
+
+    if statistics_collector:
+        statistics_collector.add_data(
+            # In the SubER code we always use the reference to hypothesis direction, i.e. we call an additional word
+            # in the hypothesis an insertion, a missing word in the hypothesis a deletion.
+            trace=_flip_trace(trace),
+            words_ref=words_ref,
+            words_hyp_shifted=input_words,
+            num_shifts=shifts,
+        )
 
     return total_edits, n_words_ref
 
