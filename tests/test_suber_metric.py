@@ -162,6 +162,41 @@ class SubERMetricTests(unittest.TestCase):
         self._run_test(hypothesis, self._reference2, expected_score=33.333)
 
 
+class SubERCasedMetricTests(unittest.TestCase):
+    def test_SubER_cased(self):
+        reference = """
+            1
+            0:00:01.000 --> 0:00:02.000
+            This is a subtitle.
+
+            2
+            0:00:03.000 --> 0:00:04.000
+            And another one!"""
+
+        hypothesis = """
+            1
+            0:00:01.000 --> 0:00:01.500
+            This is a
+
+            2
+            0:00:01.500 --> 0:00:03.500
+            another
+            subtitle,
+
+            2
+            0:00:03.500 --> 0:00:04.000
+            and one!"""
+
+        hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis)
+        reference_subtitles = create_temporary_file_and_read_it(reference)
+
+        SubER_score = calculate_SubER(hypothesis_subtitles, reference_subtitles, metric="SubER-cased")
+
+        # After tokenization there should be 9 reference words + 2 reference break tokens.
+        # 1 shift and 2 break deletions as above for SubER, plus 2 substitutions: "," -> "."; "and" -> "And"
+        self.assertAlmostEqual(SubER_score, 45.455)
+
+
 class SubERHelperFunctionTests(unittest.TestCase):
 
     def test_get_independent_parts_empty_input(self):
