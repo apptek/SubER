@@ -2,6 +2,8 @@ import jiwer
 import functools
 from typing import List
 
+from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer
+
 from suber.data_types import Segment
 from suber.utilities import segment_to_string, get_segment_to_string_opts_from_metric
 
@@ -14,6 +16,9 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
 
     if metric == "WER-cased":
         transformations = jiwer.Compose([
+            # Note: the original release used no tokenization here. We find this change to have a minor positive effect
+            # on correlation with post-edit effort (-0.657 vs. -0.650 in Table 1, row 2, "Combined" in our paper.)
+            TercomTokenize(),
             jiwer.ReduceToListOfListOfWords(),
         ])
         metric = "WER"
@@ -41,3 +46,11 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         reference_strings, hypothesis_strings, truth_transform=transformations, hypothesis_transform=transformations)
 
     return round(wer_score * 100, 3)
+
+
+class TercomTokenize(jiwer.AbstractTransform):
+    def __init__(self):
+        self.tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True)
+
+    def process_string(self, s: str):
+        return self.tokenizer(s)
