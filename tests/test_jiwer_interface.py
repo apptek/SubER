@@ -38,8 +38,8 @@ class JiWERInterfaceTest(unittest.TestCase):
         wer_cased_score = calculate_word_error_rate(
             hypothesis=hypothesis_subtitles, reference=reference_subtitles, metric="WER-cased")
 
-        # 2 substitutions (casing and punctuation error) / 13 words
-        self.assertAlmostEqual(wer_cased_score, 15.385)
+        # 2 substitutions (casing and punctuation error) / 15 tokenized words
+        self.assertAlmostEqual(wer_cased_score, 13.333)
 
         wer_seg_score = calculate_word_error_rate(
             hypothesis=hypothesis_subtitles, reference=reference_subtitles, metric="WER-seg")
