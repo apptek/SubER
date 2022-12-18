@@ -90,13 +90,14 @@ def main():
             metric = metric[len("t-"):]
             score_break_at_segment_end = True
 
-        elif metric != "SubER" and len(hypothesis_segments_to_use) != len(reference_segments):
+        elif not metric.startswith("SubER") and len(hypothesis_segments_to_use) != len(reference_segments):
             raise ValueError(f"Metric '{metric}' assumes same number of segments in hypothesis and reference, but got "
                              f"{len(hypothesis_segments)} hypothesis and {len(reference_segments)} "
                              f"reference segments.")
 
-        if metric == "SubER":
-            metric_score = calculate_SubER(hypothesis=hypothesis_segments_to_use, reference=reference_segments)
+        if metric.startswith("SubER"):
+            metric_score = calculate_SubER(
+                hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric)
 
         elif metric.startswith("WER"):
             metric_score = calculate_word_error_rate(
@@ -121,7 +122,7 @@ def main():
 def check_metrics(metrics):
     allowed_metrics = {
         # Our proposed metric:
-        "SubER",
+        "SubER", "SubER-cased",
         # Established ASR and MT metrics, requiring aligned hypothesis-references segments:
         "WER", "CER", "BLEU", "TER", "chrF",
         # Cased and punctuated variants of the above:
