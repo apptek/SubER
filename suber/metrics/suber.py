@@ -5,20 +5,29 @@ from suber.data_types import Subtitle, TimedWord, LineBreak
 from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL
 from suber.metrics import lib_ter
 
+from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer  # only used for "SubER-cased"
 
-def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle]) -> float:
+
+def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metric="SubER") -> float:
     """
-    Main function to caculate the SubER score. We use a modified version of 'lib_ter.py' from sacrebleu for the
-    underlying TER implementation. We altered the algorithm by adding a time-overlap condition for word alignments
-    and by disallowing word alignments between real words and break tokens.
+    Main function to caculate the SubER score. It is computed on normalized text, which means case-insensitive and
+    without taking punctuation into account, as we observed higher correlation with human judgements and post-edit
+    effort in this setting. You can set the 'metric' parameter to "SubER-cased" to calculate a score on cased and
+    punctuated text nevertheless. In this case punctuation will be treated as separate words by using a tokenizer.
+    We use a modified version of 'lib_ter.py' from sacrebleu for the underlying TER implementation. We altered the
+    algorithm by adding a time-overlap condition for word alignments and by disallowing word alignments between real
+    words and break tokens.
     """
+    assert metric in ["SubER", "SubER-cased"]
+    normalize = (metric == "SubER")
+
     total_num_edits = 0
     total_reference_length = 0
 
     for part in _get_independent_parts(hypothesis, reference):
         hypothesis_part, reference_part = part
 
-        num_edits, reference_length = _calculate_num_edits_for_part(hypothesis_part, reference_part)
+        num_edits, reference_length = _calculate_num_edits_for_part(hypothesis_part, reference_part, normalize)
 
         total_num_edits += num_edits
         total_reference_length += reference_length
@@ -34,7 +43,7 @@ def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle]) -> fl
     return round(SubER_score, 3)
 
 
-def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_part: List[Subtitle]):
+def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_part: List[Subtitle], normalize=True):
     """
     Returns number of edits (word or break edits and shifts) and the total number of reference tokens (words + breaks)
     for the current part.
@@ -42,10 +51,16 @@ def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_par
     all_hypothesis_words = [word for segment in hypothesis_part for word in segment.word_list]
     all_reference_words = [word for segment in reference_part for word in segment.word_list]
 
-    # Although casing and punctuation are important aspects of subtitle quality, we observe higher correlation with
-    # human post edit effort when normalizing the words.
-    all_hypothesis_words = _normalize_words(all_hypothesis_words)
-    all_reference_words = _normalize_words(all_reference_words)
+    if normalize:
+        # Although casing and punctuation are important aspects of subtitle quality, we observe higher correlation with
+        # human post edit effort when normalizing the words.
+        all_hypothesis_words = _normalize_words(all_hypothesis_words)
+        all_reference_words = _normalize_words(all_reference_words)
+    else:
+        # When not normalizing punctuation symbols are kept. We treat them as separate tokens by splitting them off
+        # the words using sacrebleu's TercomTokenizer.
+        all_hypothesis_words = _tokenize_words(all_hypothesis_words)
+        all_reference_words = _tokenize_words(all_reference_words)
 
     all_hypothesis_words = _add_breaks_as_words(all_hypothesis_words)
     all_reference_words = _add_breaks_as_words(all_reference_words)
@@ -108,6 +123,41 @@ def _normalize_words(words: List[TimedWord]) -> List[TimedWord]:
                 subtitle_start_time=word.subtitle_start_time,
                 subtitle_end_time=word.subtitle_end_time,
                 approximate_word_time=word.approximate_word_time))
+
+    return output_words
+
+
+_tokenizer = None  # created if needed in _tokenize_words(), has to be cached...
+
+
+def _tokenize_words(words: List[TimedWord]) -> List[TimedWord]:
+    """
+    Not used for the main SubER metric, only for the "SubER-cased" variant. Applies sacrebleu's TercomTokenizer to all
+    words in the input, which will create a new list of words containing punctuation symbols as separate elements.
+    """
+    global _tokenizer
+    if not _tokenizer:
+        _tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True)
+
+    output_words = []
+    for word in words:
+        tokenized_word_string = _tokenizer(word.string)
+        tokens = tokenized_word_string.split()
+
+        if len(tokens) == 1:
+            assert tokenized_word_string == word.string
+            output_words.append(word)
+            continue
+
+        for token_index, token in enumerate(tokens):
+            output_words.append(
+                TimedWord(
+                    string=token,
+                    # Keep line break after the original token, no line breaks within the original token.
+                    line_break=word.line_break if token_index == len(tokens) - 1 else LineBreak.NONE,
+                    subtitle_start_time=word.subtitle_start_time,
+                    subtitle_end_time=word.subtitle_end_time,
+                    approximate_word_time=word.approximate_word_time))
 
     return output_words
 
