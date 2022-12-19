@@ -25,6 +25,9 @@ The SubER score is printed to stdout in json format. As SubER is an edit rate, l
 Make sure that there is no constant time offset between the timestamps in hypothesis and reference as this will lead to incorrect scores.
 Also, note that `<i>`, `<b>` and `<u>` formatting tags are ignored if present in the files. All other formatting must be removed from the files before scoring for accurate results.
 
+#### Punctuation and Case-Sensitivity
+The main SubER metric is computed on normalized text, which means case-insensitive and without taking punctuation into account, as we observe higher correlation with human judgements and post-edit effort in this setting. We provide an implementation of a case-sensitive variant which also uses a tokenizer to take punctuation into account as separate tokens which you can use "at your own risk" or to reassess our findings. For this, add `--metrics SubER-cased` to the command above. Please do not report results using this variant as "SubER" unless explicitly mentioning the punctuation-/case-sensitivity.
+
 ## Other Metrics
 The SubER tool supports computing the following other metrics directly on subtitle files:
 
