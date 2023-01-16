@@ -141,7 +141,7 @@ class SubERMetricTests(unittest.TestCase):
             2
             0:00:03.500 --> 0:00:04.000
             another one!"""
-        # (2 break deletions + 1 break substitution) / (7 words + 2 breaks)
+        # (2 break insertions + 1 break substitution) / (7 words + 2 breaks)
         self._run_test(hypothesis, self._reference2, expected_score=33.333)
 
     def test_split_into_three_with_one_shift(self):
@@ -158,7 +158,7 @@ class SubERMetricTests(unittest.TestCase):
             2
             0:00:03.500 --> 0:00:04.000
             And one!"""
-        # (1 shift + 2 break deletions) / (7 words + 2 breaks)
+        # (1 shift + 2 break insertions) / (7 words + 2 breaks)
         self._run_test(hypothesis, self._reference2, expected_score=33.333)
 
 
