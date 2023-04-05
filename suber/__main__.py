@@ -14,6 +14,7 @@ from suber.metrics.suber_statistics import SubERStatisticsCollector
 from suber.metrics.sacrebleu_interface import calculate_sacrebleu_metric
 from suber.metrics.jiwer_interface import calculate_word_error_rate
 from suber.metrics.cer import calculate_character_error_rate
+from suber.metrics.length_ratio import calculate_length_ratio
 
 
 def parse_arguments():
@@ -63,6 +64,10 @@ def main():
     for metric in args.metrics:
         if metric in results:
             continue  # specified multiple times by the user
+
+        if metric == "length_ratio":
+            results[metric] = calculate_length_ratio(hypothesis=hypothesis_segments, reference=reference_segments)
+            continue
 
         # When using existing parallel segments there will always be a <eob> word match in the end, don't count it.
         # On the other hand, if hypothesis gets aligned to reference a match is not guaranteed, so count it.
@@ -151,7 +156,9 @@ def check_metrics(metrics):
         "AS-BLEU-seg", "AS-TER-seg", "AS-TER-br",
         # With an "t-" prefix, the metric is computed after time alignment of hypothesis and reference:
         "t-WER", "t-CER", "t-BLEU", "t-TER", "t-chrF", "t-WER-cased", "t-CER-cased", "t-WER-seg", "t-BLEU-seg",
-        "t-TER-seg", "t-TER-br"}
+        "t-TER-seg", "t-TER-br",
+        # Hypothesis to reference length ratio in terms of number of tokens.
+        "length_ratio"}
 
     invalid_metrics = list(sorted(set(metrics) - allowed_metrics))
     if invalid_metrics:
