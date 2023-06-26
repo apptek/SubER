@@ -22,9 +22,9 @@ class FileReaderBase:
 
     def _open_file(self):
         if self._file_name.endswith(".gz"):
-            return gzip.open(self._file_name, 'rt')
+            return gzip.open(self._file_name, "rt", encoding="utf-8")
         else:
-            return open(self._file_name, 'r')
+            return open(self._file_name, "r", encoding="utf-8")
 
 
 def read_input_file(file_name, file_format) -> List[Segment]:

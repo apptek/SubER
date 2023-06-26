@@ -42,7 +42,7 @@ def main():
         aligned_hypothesis_segments = time_align_hypothesis_to_reference(
             hypothesis=hypothesis_segments, reference=reference_segments)
 
-    with open(args.aligned_hypothesis, "w") as output_file_object:
+    with open(args.aligned_hypothesis, "w", encoding="utf-8") as output_file_object:
         for segment in aligned_hypothesis_segments:
             output_file_object.write(segment_to_string(segment) + '\n')
 

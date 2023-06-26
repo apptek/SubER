@@ -25,7 +25,7 @@ def main():
     if args.sentence_segmentation:
         segments = resegment_based_on_punctuation(segments)
 
-    with open(args.output_file, "w") as output_file_object:
+    with open(args.output_file, "w", encoding="utf-8") as output_file_object:
         for segment in segments:
             output_file_object.write(segment_to_string(segment, include_line_breaks=True) + '\n')
 
