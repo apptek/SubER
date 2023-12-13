@@ -32,6 +32,9 @@ def calculate_character_error_rate(hypothesis: List[Segment], reference: List[Se
         num_edits += Levenshtein.distance(hypothesis_string, reference_string)
         num_reference_characters += len(reference_string)
 
-    cer_score = num_edits / num_reference_characters
+    if num_reference_characters:
+        cer_score = num_edits / num_reference_characters
+    else:
+        cer_score = 1.0 if num_edits else 0.0
 
     return round(cer_score * 100, 3)
