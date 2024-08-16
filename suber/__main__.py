@@ -91,7 +91,7 @@ def main():
         elif metric.startswith("t-"):
             # "t" stands for timed. Subtitle timings will be used to re-segment the hypothesis to match the reference
             # segments. t-BLEU was introduced by Cherry et al.
-            # https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf
+            # https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
             if time_aligned_hypothesis_segments is None:
                 time_aligned_hypothesis_segments = time_align_hypothesis_to_reference(
                     hypothesis=hypothesis_segments, reference=reference_segments)

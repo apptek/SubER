@@ -56,7 +56,7 @@ In this mode, the text from each parallel subtitle pair is considered to be a se
 In the general case, subtitle files for the same video can have different numbers of subtitles with different time stamps. All metrics - except SubER - usually require to be calculated on parallel segments. To apply these metrics to general subtitle files, the hypothesis file has to be re-segmented to correspond to the reference subtitles. The SubER tool implements two options:
 
 - alignment by minimizing Levenshtein distance ([Matusov et al.](https://aclanthology.org/2005.iwslt-1.19.pdf))
-- time alignment method from [Cherry et al.](https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf)
+- time alignment method from [Cherry et al.](https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf)
 
 See our [paper](https://aclanthology.org/2022.iwslt-1.1.pdf) for further details.
 
@@ -65,7 +65,7 @@ To use the Levenshtein method add an `AS-` prefix to the metric name, e.g.:
 suber -H hypothesis.srt -R reference.srt --metrics AS-BLEU
 ```
 The `AS-` prefix terminology is taken from [Matusov et al.](https://aclanthology.org/2005.iwslt-1.19.pdf) and stands for "automatic segmentation".
-To use the time-alignment method instead, add a `t-` prefix. This works for all metrics (except for SubER itself which does not require re-segmentation). In particular, we implement `t-BLEU` from [Cherry et al.](https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf). We encode the segmentation method (or lack thereof) in the metric name to explicitly distinguish the different resulting metric scores!
+To use the time-alignment method instead, add a `t-` prefix. This works for all metrics (except for SubER itself which does not require re-segmentation). In particular, we implement `t-BLEU` from [Cherry et al.](https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf). We encode the segmentation method (or lack thereof) in the metric name to explicitly distinguish the different resulting metric scores!
 
 To inspect the re-segmentation applied to the hypothesis you can use the `align_hyp_to_ref.py` tool (run `python -m suber.tools.align_hyp_to_ref -h` for help).
 

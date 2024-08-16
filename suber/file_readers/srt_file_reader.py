@@ -109,7 +109,7 @@ class SRTFileReader(FileReaderBase):
     def _set_approximate_word_times(cls, word_list, start_time, end_time):
         """
         Linearly interpolates word times from the subtitle start and end time as described in
-        https://www.isca-speech.org/archive/pdfs/interspeech_2021/cherry21_interspeech.pdf
+        https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
         """
         # Remove small margin to guarantee the first and last word will always be counted as within the subtitle.
         epsilon = 1e-8
