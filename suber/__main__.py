@@ -13,6 +13,7 @@ from suber.metrics.suber import calculate_SubER
 from suber.metrics.suber_statistics import SubERStatisticsCollector
 from suber.metrics.sacrebleu_interface import calculate_sacrebleu_metric
 from suber.metrics.jiwer_interface import calculate_word_error_rate
+from suber.metrics.pyannote_interface import calculate_time_span_accuracy
 from suber.metrics.cer import calculate_character_error_rate
 from suber.metrics.length_ratio import calculate_length_ratio
 
@@ -67,6 +68,11 @@ def main():
 
         if metric == "length_ratio":
             results[metric] = calculate_length_ratio(hypothesis=hypothesis_segments, reference=reference_segments)
+            continue
+
+        if metric.startswith("time_span"):
+            results[metric] = calculate_time_span_accuracy(
+                hypothesis=hypothesis_segments, reference=reference_segments, metric=metric)
             continue
 
         # When using existing parallel segments there will always be a <eob> word match in the end, don't count it.
@@ -158,7 +164,10 @@ def check_metrics(metrics):
         "t-WER", "t-CER", "t-BLEU", "t-TER", "t-chrF", "t-WER-cased", "t-CER-cased", "t-WER-seg", "t-BLEU-seg",
         "t-TER-seg", "t-TER-br",
         # Hypothesis to reference length ratio in terms of number of tokens.
-        "length_ratio"}
+        "length_ratio",
+        # Metrics evaluating how well the hypothesized subtitle timings cover the reference (in terms of duration,
+        # independent of text).
+        "time_span_accuracy", "time_span_precision", "time_span_recall", "time_span_f1"}
 
     invalid_metrics = list(sorted(set(metrics) - allowed_metrics))
     if invalid_metrics:
@@ -168,7 +177,7 @@ def check_metrics(metrics):
 def check_file_formats(hypothesis_format, reference_format, metrics):
     is_plain_input = (hypothesis_format == "plain" or reference_format == "plain")
     for metric in metrics:
-        if ((metric == "SubER" or metric.startswith("t-")) and is_plain_input):
+        if ((metric == "SubER" or metric.startswith("t-") or metric.startswith("time_span")) and is_plain_input):
             raise ValueError(f"Metric '{metric}' requires timing information and can only be computed on SRT "
                              f"files (both hypothesis and reference).")
 
