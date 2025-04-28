@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "subtitle-edit-rate"
 version = "0.2.0"
 dependencies = [
-    "sacrebleu==2.0.0",
-    "jiwer==2.3.0",
+    "sacrebleu==2.5.1",
+    "jiwer==4.0.0",
     "numpy",
     "dataclasses;python_version<'3.7'",
 ]
