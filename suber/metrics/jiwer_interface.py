@@ -43,7 +43,10 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
     reference_strings = [segment_to_string_(segment) for segment in reference]
 
     wer_score = jiwer.wer(
-        reference_strings, hypothesis_strings, truth_transform=transformations, hypothesis_transform=transformations)
+        reference_strings,
+        hypothesis_strings,
+        reference_transform=transformations,
+        hypothesis_transform=transformations)
 
     return round(wer_score * 100, 3)
 
