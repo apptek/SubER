@@ -49,7 +49,7 @@ def levenshtein_align_hypothesis_to_reference(hypothesis: List[Segment], referen
         reference_position_range = range(opcode_tuple[1], opcode_tuple[2])
 
         if edit_operation in ("equal", "replace"):
-            assert len(hypothesis_position_range) == len(hypothesis_position_range)
+            assert len(hypothesis_position_range) == len(reference_position_range)
         elif edit_operation == "insert":
             assert len(reference_position_range) == 0
         elif edit_operation == "delete":
