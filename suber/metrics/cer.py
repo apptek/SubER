@@ -1,7 +1,7 @@
-import Levenshtein
 import string
 from typing import List
 
+from suber import lib_levenshtein
 from suber.data_types import Segment
 from suber.utilities import segment_to_string
 
@@ -29,7 +29,7 @@ def calculate_character_error_rate(hypothesis: List[Segment], reference: List[Se
     num_edits = 0
     num_reference_characters = 0
     for hypothesis_string, reference_string, in zip(hypothesis_strings, reference_strings):
-        num_edits += Levenshtein.distance(hypothesis_string, reference_string)
+        num_edits += lib_levenshtein.distance(hypothesis_string, reference_string)
         num_reference_characters += len(reference_string)
 
     if num_reference_characters:

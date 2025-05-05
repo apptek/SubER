@@ -1,9 +1,9 @@
 import numpy
 import string
-import Levenshtein
 from itertools import zip_longest
 from typing import List, Tuple
 
+from suber import lib_levenshtein
 from suber.data_types import Segment
 
 
@@ -36,7 +36,7 @@ def levenshtein_align_hypothesis_to_reference(hypothesis: List[Segment], referen
     reference_string, hypothesis_string = _map_words_to_characters(
         all_reference_word_strings, all_hypothesis_word_strings)
 
-    opcodes = Levenshtein.opcodes(reference_string, hypothesis_string)
+    opcodes = lib_levenshtein.opcodes(reference_string, hypothesis_string)
 
     reference_segment_lengths = [len(segment.word_list) for segment in reference]
     reference_segment_boundary_indices = numpy.cumsum(reference_segment_lengths)

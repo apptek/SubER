@@ -8,7 +8,6 @@ version = "0.2.0"
 dependencies = [
     "sacrebleu==2.0.0",
     "jiwer==2.3.0",
-    "python_Levenshtein==0.12.2",
     "numpy",
     "dataclasses;python_version<'3.7'",
 ]
