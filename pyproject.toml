@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "subtitle-edit-rate"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
     "sacrebleu==2.5.1",
     "jiwer==4.0.0",
