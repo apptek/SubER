@@ -27,7 +27,7 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         transformations = jiwer.Compose([
             jiwer.ToLowerCase(),
             jiwer.RemovePunctuation(),
-            # Ellipsis is a common character in subtitles that jiwer would not remove by default.
+            # Ellipsis is a common character in subtitles that older jiwer versions would not remove by default.
             jiwer.RemoveSpecificWords(['…']),
             jiwer.ReduceToListOfListOfWords(),
         ])
