@@ -1,5 +1,6 @@
-import string
 from typing import List
+
+import regex
 
 from suber import lib_levenshtein
 from suber.data_types import Segment
@@ -14,12 +15,8 @@ def calculate_character_error_rate(hypothesis: List[Segment], reference: List[Se
     reference_strings = [segment_to_string(segment) for segment in reference]
 
     if metric != "CER-cased":
-        remove_punctuation_table = str.maketrans('', '', string.punctuation)
-
         def normalize_string(string):
-            string = string.translate(remove_punctuation_table)
-            # Ellipsis is a common character in subtitles which is not included in string.punctuation.
-            string = string.replace('…', '')
+            string = regex.sub(r"\p{P}", "", string)
             string = string.lower()
             return string
 
