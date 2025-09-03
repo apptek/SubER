@@ -1,8 +1,10 @@
 import string
 from typing import List
 
+import regex
+
 from suber.data_types import Subtitle, TimedWord, LineBreak
-from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL
+from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL, ASIAN_LANGUAGE_CODES
 from suber.metrics import lib_ter
 from suber.metrics.suber_statistics import SubERStatisticsCollector
 
@@ -10,9 +12,9 @@ from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer  # only used for 
 
 
 def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metric="SubER",
-                    statistics_collector: SubERStatisticsCollector = None) -> float:
+                    statistics_collector: SubERStatisticsCollector = None, language: str = None) -> float:
     """
-    Main function to caculate the SubER score. It is computed on normalized text, which means case-insensitive and
+    Main function to calculate the SubER score. It is computed on normalized text, which means case-insensitive and
     without taking punctuation into account, as we observed higher correlation with human judgements and post-edit
     effort in this setting. You can set the 'metric' parameter to "SubER-cased" to calculate a score on cased and
     punctuated text nevertheless. In this case punctuation will be treated as separate words by using a tokenizer.
@@ -30,7 +32,8 @@ def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metri
         hypothesis_part, reference_part = part
 
         num_edits, reference_length = _calculate_num_edits_for_part(
-            hypothesis_part, reference_part, normalize=normalize, statistics_collector=statistics_collector)
+            hypothesis_part, reference_part, normalize=normalize, statistics_collector=statistics_collector,
+            language=language)
 
         total_num_edits += num_edits
         total_reference_length += reference_length
@@ -47,7 +50,7 @@ def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metri
 
 
 def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_part: List[Subtitle], normalize=True,
-                                  statistics_collector: SubERStatisticsCollector = None):
+                                  statistics_collector: SubERStatisticsCollector = None, language: str = None):
     """
     Returns number of edits (word or break edits and shifts) and the total number of reference tokens (words + breaks)
     for the current part.
@@ -58,13 +61,14 @@ def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_par
     if normalize:
         # Although casing and punctuation are important aspects of subtitle quality, we observe higher correlation with
         # human post edit effort when normalizing the words.
-        all_hypothesis_words = _normalize_words(all_hypothesis_words)
-        all_reference_words = _normalize_words(all_reference_words)
-    else:
+        all_hypothesis_words = _normalize_words(all_hypothesis_words, language=language)
+        all_reference_words = _normalize_words(all_reference_words, language=language)
+
+    if not normalize or language in ASIAN_LANGUAGE_CODES:
         # When not normalizing punctuation symbols are kept. We treat them as separate tokens by splitting them off
         # the words using sacrebleu's TercomTokenizer.
-        all_hypothesis_words = _tokenize_words(all_hypothesis_words)
-        all_reference_words = _tokenize_words(all_reference_words)
+        all_hypothesis_words = _tokenize_words(all_hypothesis_words, language=language)
+        all_reference_words = _tokenize_words(all_reference_words, language=language)
 
     all_hypothesis_words = _add_breaks_as_words(all_hypothesis_words)
     all_reference_words = _add_breaks_as_words(all_reference_words)
@@ -107,17 +111,26 @@ def _add_breaks_as_words(words: List[TimedWord]) -> List[TimedWord]:
 remove_punctuation_table = str.maketrans('', '', string.punctuation)
 
 
-def _normalize_words(words: List[TimedWord]) -> List[TimedWord]:
+def _normalize_words(words: List[TimedWord], language: str = None) -> List[TimedWord]:
     """
     Lower-cases Words and removes punctuation.
     """
     output_words = []
     for word in words:
         normalized_string = word.string.lower()
-        normalized_string_without_punctuation = normalized_string.translate(remove_punctuation_table)
-        normalized_string_without_punctuation = normalized_string_without_punctuation.replace('…', '')
+        if language in ASIAN_LANGUAGE_CODES:
+            normalized_string_without_punctuation = regex.sub(r"\p{P}", "", normalized_string)
+        else:
+            # Backwards compatibility: keep old behavior for other languages, even though removing non-ASCII punctuation
+            # would also make sense here.
+            normalized_string_without_punctuation = normalized_string.translate(remove_punctuation_table)
+            normalized_string_without_punctuation = normalized_string_without_punctuation.replace('…', '')
 
-        if normalized_string_without_punctuation:  # keep tokens that are purely punctuation
+        # Keep tokens that are purely punctuation.
+        # TODO: this rule is questionable, for example in French '?', '!', etc. are not attached and thus taken into
+        # account. Also leading dialogue dashes are often followed by a space. But also here, better to not change
+        # original behavior for now.
+        if normalized_string_without_punctuation:
             normalized_string = normalized_string_without_punctuation
 
         output_words.append(
@@ -132,20 +145,27 @@ def _normalize_words(words: List[TimedWord]) -> List[TimedWord]:
 
 
 _tokenizer = None  # created if needed in _tokenize_words(), has to be cached...
+_asian_tokenizer = None
 
 
-def _tokenize_words(words: List[TimedWord]) -> List[TimedWord]:
+def _tokenize_words(words: List[TimedWord], language: str = None) -> List[TimedWord]:
     """
     Not used for the main SubER metric, only for the "SubER-cased" variant. Applies sacrebleu's TercomTokenizer to all
     words in the input, which will create a new list of words containing punctuation symbols as separate elements.
     """
     global _tokenizer
-    if not _tokenizer:
-        _tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True)
+    global _asian_tokenizer
+
+    asian_support = language in ASIAN_LANGUAGE_CODES
+    if not asian_support and not _tokenizer:
+        _tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True, asian_support=False)
+    if asian_support and not _asian_tokenizer:
+        _asian_tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True, asian_support=True)
+    tokenizer = _asian_tokenizer if asian_support else _tokenizer
 
     output_words = []
     for word in words:
-        tokenized_word_string = _tokenizer(word.string)
+        tokenized_word_string = tokenizer(word.string)
         tokens = tokenized_word_string.split()
 
         if len(tokens) == 1:

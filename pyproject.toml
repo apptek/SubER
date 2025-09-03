@@ -9,6 +9,7 @@ dependencies = [
     "sacrebleu==2.5.1",
     "jiwer==4.0.0",
     "numpy",
+    "regex",
     "dataclasses;python_version<'3.7'",
 ]
 requires-python = ">= 3.6"
