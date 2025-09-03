@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 from suber.file_readers import read_input_file
 from suber.concat_input_files import create_concatenated_segments
+from suber.constants import ASIAN_LANGUAGE_CODES
 from suber.hyp_to_ref_alignment import levenshtein_align_hypothesis_to_reference
 from suber.hyp_to_ref_alignment import time_align_hypothesis_to_reference
 from suber.metrics.suber import calculate_SubER
@@ -32,6 +33,12 @@ def parse_arguments():
     parser.add_argument("-m", "--metrics", nargs="+", default=["SubER"], help="The metrics to compute.")
     parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
     parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("-l", "--language", choices=["zh", "ja", "ko"],
+                        help="Set to 'zh', 'ja' or 'ko' to enable correct tokenization of Chinese, Japanese or Korean "
+                             "text, respectively. Any of these sets 'asian_support=True' for the TercomTokenizer (used "
+                             "for SubER, TER and WER). The language code is also passed to sacrebleu's BLEU metric "
+                             "which will select 'zh', 'ja-mecab' or 'ko-mecab' tokenization, respectively, instead "
+                             "of the default '13a'.")
     parser.add_argument("--suber-statistics", action="store_true",
                         help="If set, will create an '#info' field in the output containing statistics about the "
                              "different edit operations used to calculate the SubER score.")
@@ -66,7 +73,8 @@ def main():
             continue  # specified multiple times by the user
 
         if metric == "length_ratio":
-            results[metric] = calculate_length_ratio(hypothesis=hypothesis_segments, reference=reference_segments)
+            results[metric] = calculate_length_ratio(
+                hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
             continue
 
         # When using existing parallel segments there will always be a <eob> word match in the end, don't count it.
@@ -77,6 +85,10 @@ def main():
         hypothesis_segments_to_use = hypothesis_segments
 
         if metric.startswith("AS-"):
+            if args.language in ASIAN_LANGUAGE_CODES:
+                # Korean might actually work fine already...
+                raise NotImplementedError(f"Hyp to ref alignment not implemented for language {args.language}.")
+
             # "AS" stands for automatic segmentation, in particular re-segmentation of the hypothesis using
             # the Levenshtein alignment to the reference.
             # AS-WER and AS-BLEU were introduced by Matusov et al. https://aclanthology.org/2005.iwslt-1.19.pdf
@@ -89,6 +101,10 @@ def main():
             score_break_at_segment_end = True
 
         elif metric.startswith("t-"):
+            if args.language in ASIAN_LANGUAGE_CODES:
+                # Korean might actually work fine already...
+                raise NotImplementedError(f"Hyp to ref alignment not implemented for language {args.language}.")
+
             # "t" stands for timed. Subtitle timings will be used to re-segment the hypothesis to match the reference
             # segments. t-BLEU was introduced by Cherry et al.
             # https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
@@ -110,7 +126,7 @@ def main():
 
             metric_score = calculate_SubER(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                statistics_collector=statistics_collector)
+                statistics_collector=statistics_collector, language=args.language)
 
             if statistics_collector:
                 additional_outputs[full_metric_name] = statistics_collector.get_statistics()
@@ -118,7 +134,7 @@ def main():
         elif metric.startswith("WER"):
             metric_score = calculate_word_error_rate(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                score_break_at_segment_end=score_break_at_segment_end)
+                score_break_at_segment_end=score_break_at_segment_end, language=args.language)
 
         elif metric.startswith("CER"):
             metric_score = calculate_character_error_rate(
@@ -127,7 +143,7 @@ def main():
         else:
             metric_score = calculate_sacrebleu_metric(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                score_break_at_segment_end=score_break_at_segment_end)
+                score_break_at_segment_end=score_break_at_segment_end, language=args.language)
 
         results[full_metric_name] = metric_score
 
