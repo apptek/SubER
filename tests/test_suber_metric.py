@@ -169,7 +169,7 @@ class SubERMetricTests(unittest.TestCase):
 
             2
             0:00:03.000 --> 0:00:04.000
-            そして もう一つ。"""  # TODO: added a space here to make tokenization as in hypothesis, does it make sense?
+            そしてもう一つ。"""
 
         hypothesis = """
             1
@@ -186,11 +186,11 @@ class SubERMetricTests(unittest.TestCase):
             もう一つ！"""
 
         # TercomTokenizer splits into this:
-        # "これは 字 幕 です そして もう 一 つ"
-        # "これは そして 字 幕 です もう 一 つ"
+        # "これ は 字幕 です そして もう 一つ"
+        # "これ は そして 字幕 です もう 一つ'"
 
-        # (1 shift + 2 break insertions) / (8 words + 2 breaks)
-        self._run_test(hypothesis, reference, expected_score=30.0, language="ja")
+        # (1 shift + 2 break insertions) / (7 words + 2 breaks)
+        self._run_test(hypothesis, reference, expected_score=33.333, language="ja")
 
 
 class SubERCasedMetricTests(unittest.TestCase):
@@ -235,7 +235,7 @@ class SubERCasedMetricTests(unittest.TestCase):
 
             2
             0:00:03.000 --> 0:00:04.000
-            そして もう一つ。"""  # TODO: added a space here to make tokenization as in hypothesis, does it make sense?
+            そしてもう一つ。"""
 
         hypothesis = """
             1
@@ -251,18 +251,18 @@ class SubERCasedMetricTests(unittest.TestCase):
             0:00:03.500 --> 0:00:04.000
             もう一つ！"""
 
-        # TercomTokenizer splits into this:
-        # "これは 字 幕 です 。 そして もう 一 つ  。"
-        # "これは そして 字 幕 です  。 もう 一 つ ！"
+        # TokenizerJaMecab splits into this:
+        # "これ は 字幕 です 。 そして もう 一つ 。"
+        # "これ は そして 字幕 です 。 もう 一つ ！"
 
         hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis)
         reference_subtitles = create_temporary_file_and_read_it(reference)
 
         SubER_score = calculate_SubER(hypothesis_subtitles, reference_subtitles, metric="SubER-cased", language="ja")
 
-        # 10 words after tokenization + 2 reference break tokens.
+        # 9 words after tokenization + 2 reference break tokens.
         # 1 shift and 2 break insertions as above for SubER, plus 1 substitution '！' -> '。'
-        self.assertAlmostEqual(SubER_score, 33.333)
+        self.assertAlmostEqual(SubER_score, 36.364)
 
 
 class SubERHelperFunctionTests(unittest.TestCase):

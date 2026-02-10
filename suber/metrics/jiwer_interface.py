@@ -2,10 +2,9 @@ import jiwer
 import functools
 from typing import List
 
-from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer
-
 from suber.data_types import Segment
 from suber.constants import ASIAN_LANGUAGE_CODES
+from suber.tokenizers import get_sacrebleu_tokenizer
 from suber.utilities import segment_to_string, get_segment_to_string_opts_from_metric
 
 
@@ -19,7 +18,7 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         transformations = jiwer.Compose([
             # Note: the original release used no tokenization here. We find this change to have a minor positive effect
             # on correlation with post-edit effort (-0.657 vs. -0.650 in Table 1, row 2, "Combined" in our paper.)
-            TercomTokenize(language),
+            Tokenize(language),
             jiwer.ReduceToListOfListOfWords(),
         ])
         metric = "WER"
@@ -35,7 +34,7 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         # For most languages no tokenizer needed when punctuation is removed. Not true though for languages that do not
         # use spaces to separate words.
         if language in ASIAN_LANGUAGE_CODES:
-            transformations.insert(3, TercomTokenize(language))
+            transformations.insert(3, Tokenize(language))
 
         transformations = jiwer.Compose(transformations)
 
@@ -58,11 +57,10 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
     return round(wer_score * 100, 3)
 
 
-class TercomTokenize(jiwer.AbstractTransform):
+class Tokenize(jiwer.AbstractTransform):
     def __init__(self, language: str):
-        asian_support = language in ASIAN_LANGUAGE_CODES
-        self.tokenizer = TercomTokenizer(
-            normalized=True, no_punct=False, case_sensitive=True, asian_support=asian_support)
+        # For backwards-compatibility, TercomTokenizer is used for all languages except "ja", "ko", and "zh".
+        self.tokenizer = get_sacrebleu_tokenizer(language, default_to_tercom=True)
 
     def process_string(self, s: str):
         # TercomTokenizer would split "<eol>" into "< eol >"
