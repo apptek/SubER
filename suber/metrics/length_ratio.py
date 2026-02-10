@@ -1,9 +1,7 @@
 from typing import List
-from suber.data_types import Segment
 
-from sacrebleu.tokenizers.tokenizer_13a import Tokenizer13a
-from sacrebleu.tokenizers.tokenizer_ja_mecab import TokenizerJaMecab
-from sacrebleu.tokenizers.tokenizer_zh import TokenizerZh
+from suber.data_types import Segment
+from suber.tokenizers import get_sacrebleu_tokenizer
 
 
 def calculate_length_ratio(hypothesis: List[Segment], reference: List[Segment], language: str = None) -> float:
@@ -15,17 +13,7 @@ def calculate_length_ratio(hypothesis: List[Segment], reference: List[Segment], 
 
     # Same tokenizer as used by default for BLEU calculation in SacreBLEU depending on the language, so length ratio we
     # calculate here should correspond to the "ratio" printed by SacreBLEU.
-    if language == "ja":
-        tokenizer = TokenizerJaMecab()
-    elif language == "ko":
-        # Import only here to keep compatible with sacrebleu versions < 2.2 for all other languages.
-        from sacrebleu.tokenizers.tokenizer_ko_mecab import TokenizerKoMecab
-
-        tokenizer = TokenizerKoMecab()
-    elif language == "zh":
-        tokenizer = TokenizerZh()
-    else:
-        tokenizer = Tokenizer13a()
+    tokenizer = get_sacrebleu_tokenizer(language)
 
     num_tokens_hypothesis = len(tokenizer(full_hypothesis_string).split())
     num_tokens_reference = len(tokenizer(full_reference_string).split())

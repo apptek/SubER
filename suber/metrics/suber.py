@@ -7,8 +7,7 @@ from suber.data_types import Subtitle, TimedWord, LineBreak
 from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL, ASIAN_LANGUAGE_CODES
 from suber.metrics import lib_ter
 from suber.metrics.suber_statistics import SubERStatisticsCollector
-
-from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer  # only used for "SubER-cased"
+from suber.tokenizers import get_sacrebleu_tokenizer
 
 
 def calculate_SubER(hypothesis: List[Subtitle], reference: List[Subtitle], metric="SubER",
@@ -144,8 +143,7 @@ def _normalize_words(words: List[TimedWord], language: str = None) -> List[Timed
     return output_words
 
 
-_tokenizer = None  # created if needed in _tokenize_words(), has to be cached...
-_asian_tokenizer = None
+_tokenizers = {}  # language -> callable
 
 
 def _tokenize_words(words: List[TimedWord], language: str = None) -> List[TimedWord]:
@@ -153,15 +151,14 @@ def _tokenize_words(words: List[TimedWord], language: str = None) -> List[TimedW
     Not used for the main SubER metric, only for the "SubER-cased" variant. Applies sacrebleu's TercomTokenizer to all
     words in the input, which will create a new list of words containing punctuation symbols as separate elements.
     """
-    global _tokenizer
-    global _asian_tokenizer
+    global _tokenizers
 
-    asian_support = language in ASIAN_LANGUAGE_CODES
-    if not asian_support and not _tokenizer:
-        _tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True, asian_support=False)
-    if asian_support and not _asian_tokenizer:
-        _asian_tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True, asian_support=True)
-    tokenizer = _asian_tokenizer if asian_support else _tokenizer
+    if language not in _tokenizers:
+        # For all languages except "ja", "ko", "zh" we use TercomTokenizer to stay close to the reference TER
+        # implementation.
+        _tokenizers[language] = get_sacrebleu_tokenizer(language, default_to_tercom=True)
+
+    tokenizer = _tokenizers[language]
 
     output_words = []
     for word in words:

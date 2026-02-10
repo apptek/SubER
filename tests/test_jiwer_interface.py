@@ -54,7 +54,6 @@ class JiWERInterfaceTest(unittest.TestCase):
         # (1 break deletion + 1 break insertion) / (13 words + 1 breaks)
         self.assertAlmostEqual(wer_seg_score, 14.286)
 
-
     def test_wer_japanese(self):
         reference_file_content = """
             1
@@ -76,9 +75,9 @@ class JiWERInterfaceTest(unittest.TestCase):
             これは二つの行を
             持つ別のブロックです。"""
 
-        # TercomTokenizer(normalized=True, asian_support=True) used for TER expected to tokenize into this:
-        # "これは 簡 単 な 最 初 のブロックです"
-        # "これは 二 つの 行 を 持 つ 別 のブロックです"
+        # TokenizerJaMecab expected to tokenize into this:
+        # "これ は 簡単 な 最初 の ブロック です"
+        # "これ は 二つ の 行 を 持つ 別 の ブロック です"
 
         reference_subtitles = create_temporary_file_and_read_it(reference_file_content)
         hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis_file_content)
@@ -91,22 +90,21 @@ class JiWERInterfaceTest(unittest.TestCase):
         wer_cased_score = calculate_word_error_rate(
             hypothesis=hypothesis_subtitles, reference=reference_subtitles, metric="WER-cased", language="ja")
 
-        # 2 punctuation errors / 16 tokenized words
-        self.assertAlmostEqual(wer_cased_score, 12.5)
+        # 2 punctuation errors / 19 tokenized words
+        self.assertAlmostEqual(wer_cased_score, 10.526)
 
         wer_seg_score = calculate_word_error_rate(
             hypothesis=hypothesis_subtitles, reference=reference_subtitles, metric="WER-seg", language="ja")
 
-        # (1 break deletion + 1 break insertion) / (16 tokenized words + 3 breaks)
-        self.assertAlmostEqual(wer_seg_score, 10.526)
+        # (1 break deletion + 1 break insertion) / (19 tokenized words + 3 breaks)
+        self.assertAlmostEqual(wer_seg_score, 9.091)
 
         wer_seg_score = calculate_word_error_rate(
             hypothesis=hypothesis_subtitles, reference=reference_subtitles, metric="WER-seg",
             score_break_at_segment_end=False, language="ja")
 
-        # (1 break deletion + 1 break insertion) / (16 tokenized words + 1 breaks)
-        self.assertAlmostEqual(wer_seg_score, 11.765)
-
+        # (1 break deletion + 1 break insertion) / (19 tokenized words + 1 breaks)
+        self.assertAlmostEqual(wer_seg_score, 10.0)
 
 
 if __name__ == '__main__':

@@ -34,11 +34,12 @@ def parse_arguments():
     parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
     parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
     parser.add_argument("-l", "--language", choices=["zh", "ja", "ko"],
-                        help="Set to 'zh', 'ja' or 'ko' to enable correct tokenization of Chinese, Japanese or Korean "
-                             "text, respectively. Any of these sets 'asian_support=True' for the TercomTokenizer (used "
-                             "for SubER, TER and WER). The language code is also passed to sacrebleu's BLEU metric "
-                             "which will select 'zh', 'ja-mecab' or 'ko-mecab' tokenization, respectively, instead "
-                             "of the default '13a'.")
+                        help='Set to "zh", "ja" or "ko" to enable correct tokenization of Chinese, Japanese or Korean '
+                             "text, respectively. We follow sacrebleu and use its BLEU tokenizers 'zh', 'ja-mecab' and "
+                             "'ko-mecab' for these three languages, respectively. We employ those tokenizers for SubER "
+                             "and WER computation too, in favor of TercomTokenizer. That's because TercomTokenizer's "
+                             '"asian_support" is questionable, it does not split Japanese Hiragana/Katakana at all. '
+                             'Only for TER itself the original TercomTokenizer with "asian_support" is used.')
     parser.add_argument("--suber-statistics", action="store_true",
                         help="If set, will create an '#info' field in the output containing statistics about the "
                              "different edit operations used to calculate the SubER score.")
