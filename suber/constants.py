@@ -10,3 +10,5 @@ MASK_SYMBOL = "<mask>"
 # For SubER and WER we actually use sacrebleu's TokenizerZh, TokenizerJaMecab, and TokenizerKoMecab instead of
 # TercomTokenizer with "asian_support".
 ASIAN_LANGUAGE_CODES = ["zh", "ja", "ko"]
+
+SPACE_ESCAPE = "▁"

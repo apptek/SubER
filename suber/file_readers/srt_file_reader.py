@@ -1,10 +1,9 @@
 import re
 import datetime
-import numpy
-
 
 from suber.file_readers.file_reader_base import FileReaderBase
 from suber.data_types import LineBreak, TimedWord, Subtitle
+from suber.utilities import set_approximate_word_times
 
 
 class SRTFormatError(Exception):
@@ -81,7 +80,7 @@ class SRTFileReader(FileReaderBase):
                 if word_list:  # might be an empty subtitle
                     word_list[-1].line_break = LineBreak.END_OF_BLOCK
 
-                    self._set_approximate_word_times(word_list, start_time, end_time)
+                    set_approximate_word_times(word_list, start_time, end_time)
 
                 subtitles.append(
                     Subtitle(word_list=word_list, index=subtitle_index, start_time=start_time, end_time=end_time))
@@ -98,31 +97,12 @@ class SRTFileReader(FileReaderBase):
             if word_list:  # might be an empty subtitle
                 word_list[-1].line_break = LineBreak.END_OF_BLOCK
 
-                self._set_approximate_word_times(word_list, start_time, end_time)
+                set_approximate_word_times(word_list, start_time, end_time)
 
             subtitles.append(
                 Subtitle(word_list=word_list, index=subtitle_index, start_time=start_time, end_time=end_time))
 
         return subtitles
-
-    @classmethod
-    def _set_approximate_word_times(cls, word_list, start_time, end_time):
-        """
-        Linearly interpolates word times from the subtitle start and end time as described in
-        https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
-        """
-        # Remove small margin to guarantee the first and last word will always be counted as within the subtitle.
-        epsilon = 1e-8
-        start_time = start_time + epsilon
-        end_time = end_time - epsilon
-
-        num_words = len(word_list)
-        duration = end_time - start_time
-        assert duration >= 0
-
-        approximate_word_times = numpy.linspace(start=start_time, stop=end_time, num=num_words)
-        for word_time, word in zip(approximate_word_times, word_list):
-            word.approximate_word_time = word_time
 
     @classmethod
     def _parse_time_stamp(cls, time_stamp):

@@ -1,16 +1,23 @@
 import numpy
+from typing import List, Optional
 
-from typing import List
+from suber.constants import ASIAN_LANGUAGE_CODES
 from suber.data_types import Segment, Subtitle
+from suber.tokenizers import reversibly_tokenize_segments, detokenize_segments
 
 
-def time_align_hypothesis_to_reference(hypothesis: List[Segment], reference: List[Subtitle]) -> List[Subtitle]:
+def time_align_hypothesis_to_reference(
+        hypothesis: List[Segment], reference: List[Subtitle], language: Optional[str] = None) -> List[Subtitle]:
     """
     Re-segments the hypothesis segments according to the reference subtitle timings. The output hypothesis subtitles
     will have the same time stamps as the reference, and each will contain the words whose approximate times falls into
     these intervals, i.e. reference_subtitle.start_time < word.approximate_word_time < reference_subtitle.end_time.
     Hypothesis words that do not fall into any subtitle will be dropped.
     """
+
+    if language in ASIAN_LANGUAGE_CODES:
+        hypothesis = reversibly_tokenize_segments(hypothesis, language)
+
     aligned_hypothesis_word_lists = [[] for _ in reference]
 
     reference_start_times = numpy.array([subtitle.start_time for subtitle in reference])
@@ -39,5 +46,8 @@ def time_align_hypothesis_to_reference(hypothesis: List[Segment], reference: Lis
             end_time=reference_subtitle.end_time)
 
         aligned_hypothesis.append(subtitle)
+
+    if language in ASIAN_LANGUAGE_CODES:
+        aligned_hypothesis = detokenize_segments(aligned_hypothesis)
 
     return aligned_hypothesis
