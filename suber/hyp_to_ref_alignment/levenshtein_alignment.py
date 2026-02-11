@@ -1,18 +1,28 @@
 import numpy
+import regex
 import string
 from itertools import zip_longest
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from suber import lib_levenshtein
+from suber.constants import ASIAN_LANGUAGE_CODES, SPACE_ESCAPE
 from suber.data_types import Segment
+from suber.tokenizers import reversibly_tokenize_segments, detokenize_segments
 
 
-def levenshtein_align_hypothesis_to_reference(hypothesis: List[Segment], reference: List[Segment]) -> List[Segment]:
+def levenshtein_align_hypothesis_to_reference(
+        hypothesis: List[Segment], reference: List[Segment], language: Optional[str] = None) -> List[Segment]:
     """
     Runs the Levenshtein algorithm to get the minimal set of edit operations to convert the full list of hypothesis
     words into the full list of reference words. The edit operations implicitly define an alignment between hypothesis
     and reference words. Using this alignment, the hypotheses are re-segmented to match the reference segmentation.
     """
+
+    if language in ASIAN_LANGUAGE_CODES:
+        # Punctuation kept attached because we want to remove it below to normalize the tokens before alignment, but
+        # there we cannot change the number of tokens (and must not create empty tokens).
+        hypothesis = reversibly_tokenize_segments(hypothesis, language, keep_punctuation_attached=True)
+        reference = reversibly_tokenize_segments(reference, language, keep_punctuation_attached=True)
 
     remove_punctuation_table = str.maketrans('', '', string.punctuation)
 
@@ -21,7 +31,17 @@ def levenshtein_align_hypothesis_to_reference(hypothesis: List[Segment], referen
         Lower-cases and removes punctuation as this increases the alignment accuracy.
         """
         word = word.lower()
-        word_without_punctuation = word.translate(remove_punctuation_table)
+
+        if language in ASIAN_LANGUAGE_CODES:
+            # Space escape needed for detokenization, but we don't want it to influence the alignment.
+            if word.startswith(SPACE_ESCAPE):
+                word = word[1:]
+                assert word, "Word should not be only space escape character."
+            word_without_punctuation = regex.sub(r"\p{P}", "", word)
+        else:
+            # Backwards compatibility: keep old behavior for other languages, even though removing non-ASCII punctuation
+            # would also make sense here.
+            word_without_punctuation = word.translate(remove_punctuation_table)
 
         if not word_without_punctuation:
             return word  # keep tokens that are purely punctuation
@@ -84,6 +104,9 @@ def levenshtein_align_hypothesis_to_reference(hypothesis: List[Segment], referen
                 aligned_hypothesis_word_lists[current_segment_index].append(word)
 
     aligned_hypothesis = [Segment(word_list=word_list) for word_list in aligned_hypothesis_word_lists]
+
+    if language in ASIAN_LANGUAGE_CODES:
+        aligned_hypothesis = detokenize_segments(aligned_hypothesis)
 
     return aligned_hypothesis
 

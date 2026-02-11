@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 from suber.file_readers import read_input_file
 from suber.concat_input_files import create_concatenated_segments
-from suber.constants import ASIAN_LANGUAGE_CODES
 from suber.hyp_to_ref_alignment import levenshtein_align_hypothesis_to_reference
 from suber.hyp_to_ref_alignment import time_align_hypothesis_to_reference
 from suber.metrics.suber import calculate_SubER
@@ -31,8 +30,10 @@ def parse_arguments():
                         help="The reference files. Usually just one file, but we support test sets consisting of "
                              "multiple files.")
     parser.add_argument("-m", "--metrics", nargs="+", default=["SubER"], help="The metrics to compute.")
-    parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
-    parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("-f", "--hypothesis-format", default="SRT", choices=["SRT", "plain"],
+                        help="Hypothesis file format, 'SRT' or 'plain'.")
+    parser.add_argument("-F", "--reference-format", default="SRT", choices=["SRT", "plain"],
+                        help="Reference file format, 'SRT' or 'plain'.")
     parser.add_argument("-l", "--language", choices=["zh", "ja", "ko"],
                         help='Set to "zh", "ja" or "ko" to enable correct tokenization of Chinese, Japanese or Korean '
                              "text, respectively. We follow sacrebleu and use its BLEU tokenizers 'zh', 'ja-mecab' and "
@@ -86,32 +87,24 @@ def main():
         hypothesis_segments_to_use = hypothesis_segments
 
         if metric.startswith("AS-"):
-            if args.language in ASIAN_LANGUAGE_CODES:
-                # Korean might actually work fine already...
-                raise NotImplementedError(f"Hyp to ref alignment not implemented for language {args.language}.")
-
             # "AS" stands for automatic segmentation, in particular re-segmentation of the hypothesis using
             # the Levenshtein alignment to the reference.
             # AS-WER and AS-BLEU were introduced by Matusov et al. https://aclanthology.org/2005.iwslt-1.19.pdf
             if levenshtein_aligned_hypothesis_segments is None:
                 levenshtein_aligned_hypothesis_segments = levenshtein_align_hypothesis_to_reference(
-                    hypothesis=hypothesis_segments, reference=reference_segments)
+                    hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
 
             hypothesis_segments_to_use = levenshtein_aligned_hypothesis_segments
             metric = metric[len("AS-"):]
             score_break_at_segment_end = True
 
         elif metric.startswith("t-"):
-            if args.language in ASIAN_LANGUAGE_CODES:
-                # Korean might actually work fine already...
-                raise NotImplementedError(f"Hyp to ref alignment not implemented for language {args.language}.")
-
             # "t" stands for timed. Subtitle timings will be used to re-segment the hypothesis to match the reference
             # segments. t-BLEU was introduced by Cherry et al.
             # https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
             if time_aligned_hypothesis_segments is None:
                 time_aligned_hypothesis_segments = time_align_hypothesis_to_reference(
-                    hypothesis=hypothesis_segments, reference=reference_segments)
+                    hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
 
             hypothesis_segments_to_use = time_aligned_hypothesis_segments
             metric = metric[len("t-"):]

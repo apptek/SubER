@@ -16,9 +16,14 @@ def parse_arguments():
     parser.add_argument("-R", "--reference", required=True, help="The reference file.")
     parser.add_argument("-o", "--aligned-hypothesis", required=True,
                         help="The aligned hypothesis output file in plain format.")
-    parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
-    parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
-    parser.add_argument("-m", "--method", default="levenshtein",
+    parser.add_argument("-f", "--hypothesis-format", default="SRT", choices=["SRT", "plain"],
+                        help="Hypothesis file format, 'SRT' or 'plain'.")
+    parser.add_argument("-F", "--reference-format", default="SRT", choices=["SRT", "plain"],
+                        help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("-l", "--language", choices=["zh", "ja", "ko"],
+                        help='Set to "zh", "ja" or "ko" to enable correct tokenization of Chinese, Japanese or Korean '
+                             "text, respectively.")
+    parser.add_argument("-m", "--method", default="levenshtein", choices=["levenshtein", "time"],
                         help="The alignment method, either 'levenshtein' or 'time'. See the "
                              "'suber.hyp_to_ref_alignment' module. 'time' only supported if both hypothesis and "
                              "reference are given in SRT format.")
@@ -37,10 +42,10 @@ def main():
 
     if args.method == "levenshtein":
         aligned_hypothesis_segments = levenshtein_align_hypothesis_to_reference(
-            hypothesis=hypothesis_segments, reference=reference_segments)
+            hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
     elif args.method == "time":
         aligned_hypothesis_segments = time_align_hypothesis_to_reference(
-            hypothesis=hypothesis_segments, reference=reference_segments)
+            hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
 
     with open(args.aligned_hypothesis, "w", encoding="utf-8") as output_file_object:
         for segment in aligned_hypothesis_segments:
