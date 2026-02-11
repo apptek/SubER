@@ -29,7 +29,7 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    if args.method == "time" and not args.hypothesis_format == "SRT" and args.reference_format == "SRT":
+    if args.method == "time" and not (args.hypothesis_format == "SRT" and args.reference_format == "SRT"):
         raise ValueError("For time alignment, both hypothesis and reference have to be given in SRT format.")
 
     hypothesis_segments = read_input_file(args.hypothesis, file_format=args.hypothesis_format)
