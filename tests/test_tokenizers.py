@@ -107,6 +107,25 @@ class ReversibleTokenizationTests(unittest.TestCase):
 
         self.assertTrue(num_words < num_tokens_punct_attached < num_tokens)
 
+        all_characters_from_words = "".join(word.string for subtitle in subtitles for word in subtitle.word_list)
+        all_characters_from_tokens = "".join(
+            word.string for subtitle in tokenized_subtitles for word in subtitle.word_list)
+        all_characters_from_tokens_punct_attached = "".join(
+            word.string for subtitle in tokenized_subtitles_punct_attached for word in subtitle.word_list)
+
+        self.assertEqual(all_characters_from_words, all_characters_from_tokens.replace("▁", ""))
+        self.assertEqual(all_characters_from_words, all_characters_from_tokens_punct_attached.replace("▁", ""))
+
+        previous_word_time = None
+        for subtitle in tokenized_subtitles:
+            for word in subtitle.word_list:
+                self.assertEqual(word.subtitle_start_time, subtitle.start_time)
+                self.assertEqual(word.subtitle_end_time, subtitle.end_time)
+                self.assertTrue(subtitle.start_time <= word.approximate_word_time <= subtitle.end_time)
+                if previous_word_time is not None:
+                    self.assertTrue(previous_word_time < word.approximate_word_time)
+                previous_word_time = word.approximate_word_time
+
         detokenize_subtitles = detokenize_segments(tokenized_subtitles)
         self.assertEqual(subtitles, detokenize_subtitles)
         detokenize_subtitles = detokenize_segments(tokenized_subtitles_punct_attached)

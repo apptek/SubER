@@ -161,6 +161,34 @@ class SubERMetricTests(unittest.TestCase):
         # (1 shift + 2 break insertions) / (7 words + 2 breaks)
         self._run_test(hypothesis, self._reference2, expected_score=33.333)
 
+    def test_split_into_three_with_one_shift_chinese(self):
+        reference = """
+            1
+            0:00:01.000 --> 0:00:02.000
+            这是字幕。
+
+            2
+            0:00:03.000 --> 0:00:04.000
+            还有一个！"""
+
+        hypothesis = """
+            1
+            0:00:01.000 --> 0:00:01.500
+            这是
+
+            2
+            0:00:01.500 --> 0:00:03.500
+            还有
+            字幕。
+
+            2
+            0:00:03.500 --> 0:00:04.000
+            一个！"""
+
+        # TokenizerZh expected to split all characters.
+        # (1 shift + 2 break insertions) / (8 characters + 2 breaks)
+        self._run_test(hypothesis, reference, expected_score=30.0, language="zh")
+
     def test_split_into_three_with_one_shift_japanese(self):
         reference = """
             1
@@ -187,10 +215,41 @@ class SubERMetricTests(unittest.TestCase):
 
         # TercomTokenizer splits into this:
         # "これ は 字幕 です そして もう 一つ"
-        # "これ は そして 字幕 です もう 一つ'"
+        # "これ は そして 字幕 です もう 一つ"
 
         # (1 shift + 2 break insertions) / (7 words + 2 breaks)
         self._run_test(hypothesis, reference, expected_score=33.333, language="ja")
+
+    def test_split_into_three_with_one_shift_korean(self):
+        reference = """
+            1
+            0:00:01.000 --> 0:00:02.000
+            이것은 자막입니다.
+
+            2
+            0:00:03.000 --> 0:00:04.000
+            또 하나 나왔네요."""
+
+        hypothesis = """
+            1
+            0:00:01.000 --> 0:00:01.500
+            이것은
+
+            2
+            0:00:01.500 --> 0:00:03.500
+            또 하나
+            자막입니다.
+
+            2
+            0:00:03.500 --> 0:00:04.000
+            나왔네요!"""
+
+        # TercomTokenizer splits into this:
+        # "이것 은 자막 입니다"
+        # "또 하나 나왔 네요"
+
+        # (1 shift + 2 break insertions) / (8 words + 2 breaks)
+        self._run_test(hypothesis, reference, expected_score=30.0, language="ko")
 
 
 class SubERCasedMetricTests(unittest.TestCase):
@@ -226,6 +285,40 @@ class SubERCasedMetricTests(unittest.TestCase):
         # After tokenization there should be 9 reference words + 2 reference break tokens.
         # 1 shift and 2 break insertions as above for SubER, plus 2 substitutions: "," -> "."; "and" -> "And"
         self.assertAlmostEqual(SubER_score, 45.455)
+
+    def test_SubER_cased_chinese(self):
+        reference = """
+            1
+            0:00:01.000 --> 0:00:02.000
+            这是字幕。
+
+            2
+            0:00:03.000 --> 0:00:04.000
+            还有一个。"""
+
+        hypothesis = """
+            1
+            0:00:01.000 --> 0:00:01.500
+            这是
+
+            2
+            0:00:01.500 --> 0:00:03.500
+            还有
+            字幕。
+
+            2
+            0:00:03.500 --> 0:00:04.000
+            一个！"""
+
+        hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis)
+        reference_subtitles = create_temporary_file_and_read_it(reference)
+
+        SubER_score = calculate_SubER(hypothesis_subtitles, reference_subtitles, metric="SubER-cased", language="zh")
+
+        # TokenizerZh expected to split all characters.
+        # 10 words after tokenization + 2 reference break tokens.
+        # 1 shift and 2 break insertions as above for SubER, plus 1 substitution '！' -> '。'
+        self.assertAlmostEqual(SubER_score, 33.333)
 
     def test_SubER_cased_japanese(self):
         reference = """
@@ -263,6 +356,43 @@ class SubERCasedMetricTests(unittest.TestCase):
         # 9 words after tokenization + 2 reference break tokens.
         # 1 shift and 2 break insertions as above for SubER, plus 1 substitution '！' -> '。'
         self.assertAlmostEqual(SubER_score, 36.364)
+
+    def test_SubER_cased_korean(self):
+        reference = """
+            1
+            0:00:01.000 --> 0:00:02.000
+            이것은 자막입니다.
+
+            2
+            0:00:03.000 --> 0:00:04.000
+            또 하나 나왔네요."""
+
+        hypothesis = """
+            1
+            0:00:01.000 --> 0:00:01.500
+            이것은
+
+            2
+            0:00:01.500 --> 0:00:03.500
+            또 하나
+            자막입니다.
+
+            2
+            0:00:03.500 --> 0:00:04.000
+            나왔네요!"""
+
+        # TercomTokenizer splits into this:
+        # "이것 은 자막 입니다 ."
+        # "또 하나 나왔 네요 ."
+
+        hypothesis_subtitles = create_temporary_file_and_read_it(hypothesis)
+        reference_subtitles = create_temporary_file_and_read_it(reference)
+
+        SubER_score = calculate_SubER(hypothesis_subtitles, reference_subtitles, metric="SubER-cased", language="ko")
+
+        # 10 words after tokenization + 2 reference break tokens.
+        # 1 shift and 2 break insertions as above for SubER, plus 1 substitution '!' -> '.'
+        self.assertAlmostEqual(SubER_score, 33.333)
 
 
 class SubERHelperFunctionTests(unittest.TestCase):
