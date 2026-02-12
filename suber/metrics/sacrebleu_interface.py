@@ -4,7 +4,7 @@ from typing import List
 from sacrebleu.metrics import BLEU, TER, CHRF
 
 from suber.data_types import Segment
-from suber.constants import ASIAN_LANGUAGE_CODES
+from suber.constants import EAST_ASIAN_LANGUAGE_CODES
 from suber.utilities import segment_to_string, get_segment_to_string_opts_from_metric
 
 
@@ -25,7 +25,7 @@ def calculate_sacrebleu_metric(hypothesis: List[Segment], reference: List[Segmen
         # case sensitivity and punctuation as separate tokens already. But until someone really cares let's not break
         # current behavior or add new command line options. For languages that use spaces, the default behavior is not
         # completely unreasonable.
-        asian_support = language in ASIAN_LANGUAGE_CODES
+        asian_support = language in EAST_ASIAN_LANGUAGE_CODES
         sacrebleu_metric = TER(asian_support=asian_support, normalized=asian_support)
 
         if asian_support and mask_words:

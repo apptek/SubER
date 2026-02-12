@@ -5,7 +5,7 @@ from itertools import zip_longest
 from typing import List, Optional, Tuple
 
 from suber import lib_levenshtein
-from suber.constants import ASIAN_LANGUAGE_CODES, SPACE_ESCAPE
+from suber.constants import EAST_ASIAN_LANGUAGE_CODES, SPACE_ESCAPE
 from suber.data_types import Segment
 from suber.tokenizers import reversibly_tokenize_segments, detokenize_segments
 
@@ -18,7 +18,7 @@ def levenshtein_align_hypothesis_to_reference(
     and reference words. Using this alignment, the hypotheses are re-segmented to match the reference segmentation.
     """
 
-    if language in ASIAN_LANGUAGE_CODES:
+    if language in EAST_ASIAN_LANGUAGE_CODES:
         # Punctuation kept attached because we want to remove it below to normalize the tokens before alignment, but
         # there we cannot change the number of tokens (and must not create empty tokens).
         hypothesis = reversibly_tokenize_segments(hypothesis, language, keep_punctuation_attached=True)
@@ -32,7 +32,7 @@ def levenshtein_align_hypothesis_to_reference(
         """
         word = word.lower()
 
-        if language in ASIAN_LANGUAGE_CODES:
+        if language in EAST_ASIAN_LANGUAGE_CODES:
             # Space escape needed for detokenization, but we don't want it to influence the alignment.
             if word.startswith(SPACE_ESCAPE):
                 word = word[1:]
@@ -105,7 +105,7 @@ def levenshtein_align_hypothesis_to_reference(
 
     aligned_hypothesis = [Segment(word_list=word_list) for word_list in aligned_hypothesis_word_lists]
 
-    if language in ASIAN_LANGUAGE_CODES:
+    if language in EAST_ASIAN_LANGUAGE_CODES:
         aligned_hypothesis = detokenize_segments(aligned_hypothesis)
 
     return aligned_hypothesis
