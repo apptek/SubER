@@ -11,6 +11,11 @@ pip install subtitle-edit-rate
 will install the `suber` command line tool.
 Alternatively, check out this git repository and run the contained `suber` module with `python -m suber`.
 
+For Japanese and/or Korean support (via `-l`, see below), specify `ja` and/or `ko` as optional dependency:
+```console
+pip install subtitle-edit-rate[ja,ko]
+```
+
 ## Basic Usage
 Currently, we expect subtitle files to come in [SubRip text (SRT)](https://en.wikipedia.org/wiki/SubRip) format. Given a human reference subtitle file `reference.srt` and a hypothesis file `hypothesis.srt` (typically the output of an automatic subtitling system) the SubER score can be calculated by running:
 

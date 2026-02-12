@@ -32,6 +32,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
+[project.optional-dependencies]
+# Installs MeCab for Japanese/Korean word segmentation.
+ja = ["sacrebleu[ja]==2.5.1"]
+ko = ["sacrebleu[ko]==2.5.1"]
+
 [project.urls]
 Homepage = "https://github.com/apptek/SubER"
 Issues = "https://github.com/apptek/SubER/issues"
