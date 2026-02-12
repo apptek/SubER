@@ -22,6 +22,6 @@ for i in range(100000):
 
     distance_rapidfuzz = Levenshtein.distance(s1, s2)
     distance = lib_levenshtein.distance(s1, s2)
-    assert distance == distance_rapidfuzz, (s1, s2, distance_levenshtein, distance_opcodes, i)
+    assert distance == distance_rapidfuzz, (s1, s2, distance, distance_rapidfuzz, i)
     num_editops = len(lib_levenshtein.editops(s1, s2))
-    assert distance == num_editops, (s1, s2, distance_levenshtein, distance_opcodes, i)
+    assert distance == num_editops, (s1, s2, distance, num_editops, i)
