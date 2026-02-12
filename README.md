@@ -28,6 +28,9 @@ Also, note that `<i>`, `<b>` and `<u>` formatting tags are ignored if present in
 #### Punctuation and Case-Sensitivity
 The main SubER metric is computed on normalized text, which means case-insensitive and without taking punctuation into account, as we observe higher correlation with human judgements and post-edit effort in this setting. We provide an implementation of a case-sensitive variant which also uses a tokenizer to take punctuation into account as separate tokens which you can use "at your own risk" or to reassess our findings. For this, add `--metrics SubER-cased` to the command above. Please do not report results using this variant as "SubER" unless explicitly mentioning the punctuation-/case-sensitivity.
 
+#### Language support
+SubER is expected to give meaningful scores for all languages that use space-separation of words similar to English. In addition, versions `>=0.4.0` explicitly support __Chinese__, __Japanese__ and __Korean__. (Korean does use spaces, but we follow [SacreBLEU](https://github.com/mjpost/sacrebleu) by using [mecab-ko](https://github.com/NoUnique/pymecab-ko) tokenization.) For these particular languages it is __required__ to set the `-l`/`--language` option to the corresponding two-letter language code, for example for Japanese files `suber -H hypothesis.srt -R reference.srt -l ja`. An example of a currently not supported scriptio continua language is Thai. As a workaround, it is however possible to run your own tokenization / word segmentation on the SRT files before calling `suber`.
+
 ## Other Metrics
 The SubER tool supports computing the following other metrics directly on subtitle files:
 
@@ -51,6 +54,8 @@ $ suber -H hypothesis.srt -R reference.srt --metrics WER BLEU TER chrF CER
 }
 ```
 In this mode, the text from each parallel subtitle pair is considered to be a sentence pair.
+
+For __Chinese__, __Japanese__ and __Korean__ files, also here it is required to specify the language code via `-l`/`--language` option for correct BLEU, TER and WER scores. (This sets the `asian_support` option of TER, and for BLEU and WER enables tokenization via SacreBleu's dedicated tokenizers `TokenizerZh`, `TokenizerJaMecab`, and `TokenizerKoMecab`, respectively.)
 
 ### Scoring Non-Parallel Subtitle Files
 In the general case, subtitle files for the same video can have different numbers of subtitles with different time stamps. All metrics - except SubER - usually require to be calculated on parallel segments. To apply these metrics to general subtitle files, the hypothesis file has to be re-segmented to correspond to the reference subtitles. The SubER tool implements two options:
