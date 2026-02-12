@@ -3,7 +3,7 @@ import functools
 from typing import List
 
 from suber.data_types import Segment
-from suber.constants import ASIAN_LANGUAGE_CODES
+from suber.constants import EAST_ASIAN_LANGUAGE_CODES
 from suber.tokenizers import get_sacrebleu_tokenizer
 from suber.utilities import segment_to_string, get_segment_to_string_opts_from_metric
 
@@ -33,7 +33,7 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         ]
         # For most languages no tokenizer needed when punctuation is removed. Not true though for languages that do not
         # use spaces to separate words.
-        if language in ASIAN_LANGUAGE_CODES:
+        if language in EAST_ASIAN_LANGUAGE_CODES:
             transformations.insert(3, Tokenize(language))
 
         transformations = jiwer.Compose(transformations)

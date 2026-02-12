@@ -4,7 +4,7 @@ from typing import List
 import regex
 
 from suber.data_types import Subtitle, TimedWord, LineBreak
-from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL, ASIAN_LANGUAGE_CODES
+from suber.constants import END_OF_BLOCK_SYMBOL, END_OF_LINE_SYMBOL, EAST_ASIAN_LANGUAGE_CODES
 from suber.metrics import lib_ter
 from suber.metrics.suber_statistics import SubERStatisticsCollector
 from suber.tokenizers import get_sacrebleu_tokenizer
@@ -63,7 +63,7 @@ def _calculate_num_edits_for_part(hypothesis_part: List[Subtitle], reference_par
         all_hypothesis_words = _normalize_words(all_hypothesis_words, language=language)
         all_reference_words = _normalize_words(all_reference_words, language=language)
 
-    if not normalize or language in ASIAN_LANGUAGE_CODES:
+    if not normalize or language in EAST_ASIAN_LANGUAGE_CODES:
         # When not normalizing punctuation symbols are kept. We treat them as separate tokens by splitting them off
         # the words using sacrebleu's TercomTokenizer.
         all_hypothesis_words = _tokenize_words(all_hypothesis_words, language=language)
@@ -117,7 +117,7 @@ def _normalize_words(words: List[TimedWord], language: str = None) -> List[Timed
     output_words = []
     for word in words:
         normalized_string = word.string.lower()
-        if language in ASIAN_LANGUAGE_CODES:
+        if language in EAST_ASIAN_LANGUAGE_CODES:
             normalized_string_without_punctuation = regex.sub(r"\p{P}", "", normalized_string)
         else:
             # Backwards compatibility: keep old behavior for other languages, even though removing non-ASCII punctuation

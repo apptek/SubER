@@ -1,7 +1,7 @@
 import numpy
 from typing import List, Optional
 
-from suber.constants import ASIAN_LANGUAGE_CODES
+from suber.constants import EAST_ASIAN_LANGUAGE_CODES
 from suber.data_types import Segment, Subtitle
 from suber.tokenizers import reversibly_tokenize_segments, detokenize_segments
 
@@ -15,7 +15,7 @@ def time_align_hypothesis_to_reference(
     Hypothesis words that do not fall into any subtitle will be dropped.
     """
 
-    if language in ASIAN_LANGUAGE_CODES:
+    if language in EAST_ASIAN_LANGUAGE_CODES:
         hypothesis = reversibly_tokenize_segments(hypothesis, language)
 
     aligned_hypothesis_word_lists = [[] for _ in reference]
@@ -47,7 +47,7 @@ def time_align_hypothesis_to_reference(
 
         aligned_hypothesis.append(subtitle)
 
-    if language in ASIAN_LANGUAGE_CODES:
+    if language in EAST_ASIAN_LANGUAGE_CODES:
         aligned_hypothesis = detokenize_segments(aligned_hypothesis)
 
     return aligned_hypothesis
