@@ -29,6 +29,7 @@ class FileReaderBase:
 
 def read_input_file(file_name, file_format) -> List[Segment]:
     from suber.file_readers import PlainFileReader, SRTFileReader  # here to avoid circular import
+    from suber.file_readers.srt_file_reader import SRTFormatError
 
     if file_format == "SRT":
         file_reader = SRTFileReader(file_name)
@@ -40,6 +41,7 @@ def read_input_file(file_name, file_format) -> List[Segment]:
     try:
         segments = file_reader.read()
     except Exception as e:
-        raise Exception(f"Error reading file '{file_name}'") from e
+        extra_message = " (Forgot '-f/-F plain'?)" if (file_format == "SRT" and isinstance(e, SRTFormatError)) else ""
+        raise Exception(f"Error reading file '{file_name}'.{extra_message}") from e
 
     return segments
