@@ -168,7 +168,7 @@ def check_metrics(metrics):
 def check_file_formats(hypothesis_format, reference_format, metrics):
     is_plain_input = (hypothesis_format == "plain" or reference_format == "plain")
     for metric in metrics:
-        if ((metric == "SubER" or metric.startswith("t-")) and is_plain_input):
+        if ((metric.startswith("SubER") or metric.startswith("t-")) and is_plain_input):
             raise ValueError(f"Metric '{metric}' requires timing information and can only be computed on SRT "
                              f"files (both hypothesis and reference).")
 
