@@ -2,14 +2,14 @@ import jiwer
 import functools
 from typing import List
 
-from sacrebleu.tokenizers.tokenizer_ter import TercomTokenizer
-
 from suber.data_types import Segment
+from suber.constants import EAST_ASIAN_LANGUAGE_CODES
+from suber.tokenizers import get_sacrebleu_tokenizer
 from suber.utilities import segment_to_string, get_segment_to_string_opts_from_metric
 
 
 def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment], metric="WER",
-                              score_break_at_segment_end=True) -> float:
+                              score_break_at_segment_end=True, language: str = None) -> float:
 
     assert len(hypothesis) == len(reference), (
         "Number of hypothesis segments does not match reference, alignment step missing?")
@@ -18,19 +18,25 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
         transformations = jiwer.Compose([
             # Note: the original release used no tokenization here. We find this change to have a minor positive effect
             # on correlation with post-edit effort (-0.657 vs. -0.650 in Table 1, row 2, "Combined" in our paper.)
-            TercomTokenize(),
+            Tokenize(language),
             jiwer.ReduceToListOfListOfWords(),
         ])
         metric = "WER"
 
     else:
-        transformations = jiwer.Compose([
+        transformations = [
             jiwer.ToLowerCase(),
             jiwer.RemovePunctuation(),
             # Ellipsis is a common character in subtitles that older jiwer versions would not remove by default.
             jiwer.RemoveSpecificWords(['…']),
             jiwer.ReduceToListOfListOfWords(),
-        ])
+        ]
+        # For most languages no tokenizer needed when punctuation is removed. Not true though for languages that do not
+        # use spaces to separate words.
+        if language in EAST_ASIAN_LANGUAGE_CODES:
+            transformations.insert(3, Tokenize(language))
+
+        transformations = jiwer.Compose(transformations)
 
     include_breaks, mask_words, metric = get_segment_to_string_opts_from_metric(metric)
     assert metric == "WER"
@@ -51,9 +57,12 @@ def calculate_word_error_rate(hypothesis: List[Segment], reference: List[Segment
     return round(wer_score * 100, 3)
 
 
-class TercomTokenize(jiwer.AbstractTransform):
-    def __init__(self):
-        self.tokenizer = TercomTokenizer(normalized=True, no_punct=False, case_sensitive=True)
+class Tokenize(jiwer.AbstractTransform):
+    def __init__(self, language: str):
+        # For backwards-compatibility, TercomTokenizer is used for all languages except "ja", "ko", and "zh".
+        self.tokenizer = get_sacrebleu_tokenizer(language, default_to_tercom=True)
 
     def process_string(self, s: str):
+        # TercomTokenizer would split "<eol>" into "< eol >"
+        s = s.replace("<eol>", "eol").replace("<eob>", "eob")
         return self.tokenizer(s)

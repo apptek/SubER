@@ -9,6 +9,7 @@ dependencies = [
     "sacrebleu==2.5.1",
     "jiwer==4.0.0",
     "numpy",
+    "regex",
     "dataclasses;python_version<'3.7'",
 ]
 requires-python = ">= 3.6"
@@ -30,6 +31,11 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+[project.optional-dependencies]
+# Installs MeCab for Japanese/Korean word segmentation.
+ja = ["sacrebleu[ja]==2.5.1"]
+ko = ["sacrebleu[ko]==2.5.1"]
 
 [project.urls]
 Homepage = "https://github.com/apptek/SubER"

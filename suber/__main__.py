@@ -30,8 +30,17 @@ def parse_arguments():
                         help="The reference files. Usually just one file, but we support test sets consisting of "
                              "multiple files.")
     parser.add_argument("-m", "--metrics", nargs="+", default=["SubER"], help="The metrics to compute.")
-    parser.add_argument("-f", "--hypothesis-format", default="SRT", help="Hypothesis file format, 'SRT' or 'plain'.")
-    parser.add_argument("-F", "--reference-format", default="SRT", help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("-f", "--hypothesis-format", default="SRT", choices=["SRT", "plain"],
+                        help="Hypothesis file format, 'SRT' or 'plain'.")
+    parser.add_argument("-F", "--reference-format", default="SRT", choices=["SRT", "plain"],
+                        help="Reference file format, 'SRT' or 'plain'.")
+    parser.add_argument("-l", "--language", choices=["zh", "ja", "ko"],
+                        help='Set to "zh", "ja" or "ko" to enable correct tokenization of Chinese, Japanese or Korean '
+                             "text, respectively. We follow sacrebleu and use its BLEU tokenizers 'zh', 'ja-mecab' and "
+                             "'ko-mecab' for these three languages, respectively. We employ those tokenizers for SubER "
+                             "and WER computation too, in favor of TercomTokenizer. That's because TercomTokenizer's "
+                             '"asian_support" is questionable, it does not split Japanese Hiragana/Katakana at all. '
+                             'Only for TER itself the original TercomTokenizer with "asian_support" is used.')
     parser.add_argument("--suber-statistics", action="store_true",
                         help="If set, will create an '#info' field in the output containing statistics about the "
                              "different edit operations used to calculate the SubER score.")
@@ -66,7 +75,8 @@ def main():
             continue  # specified multiple times by the user
 
         if metric == "length_ratio":
-            results[metric] = calculate_length_ratio(hypothesis=hypothesis_segments, reference=reference_segments)
+            results[metric] = calculate_length_ratio(
+                hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
             continue
 
         # When using existing parallel segments there will always be a <eob> word match in the end, don't count it.
@@ -82,7 +92,7 @@ def main():
             # AS-WER and AS-BLEU were introduced by Matusov et al. https://aclanthology.org/2005.iwslt-1.19.pdf
             if levenshtein_aligned_hypothesis_segments is None:
                 levenshtein_aligned_hypothesis_segments = levenshtein_align_hypothesis_to_reference(
-                    hypothesis=hypothesis_segments, reference=reference_segments)
+                    hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
 
             hypothesis_segments_to_use = levenshtein_aligned_hypothesis_segments
             metric = metric[len("AS-"):]
@@ -94,7 +104,7 @@ def main():
             # https://www.isca-archive.org/interspeech_2021/cherry21_interspeech.pdf
             if time_aligned_hypothesis_segments is None:
                 time_aligned_hypothesis_segments = time_align_hypothesis_to_reference(
-                    hypothesis=hypothesis_segments, reference=reference_segments)
+                    hypothesis=hypothesis_segments, reference=reference_segments, language=args.language)
 
             hypothesis_segments_to_use = time_aligned_hypothesis_segments
             metric = metric[len("t-"):]
@@ -110,7 +120,7 @@ def main():
 
             metric_score = calculate_SubER(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                statistics_collector=statistics_collector)
+                statistics_collector=statistics_collector, language=args.language)
 
             if statistics_collector:
                 additional_outputs[full_metric_name] = statistics_collector.get_statistics()
@@ -118,7 +128,7 @@ def main():
         elif metric.startswith("WER"):
             metric_score = calculate_word_error_rate(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                score_break_at_segment_end=score_break_at_segment_end)
+                score_break_at_segment_end=score_break_at_segment_end, language=args.language)
 
         elif metric.startswith("CER"):
             metric_score = calculate_character_error_rate(
@@ -127,7 +137,7 @@ def main():
         else:
             metric_score = calculate_sacrebleu_metric(
                 hypothesis=hypothesis_segments_to_use, reference=reference_segments, metric=metric,
-                score_break_at_segment_end=score_break_at_segment_end)
+                score_break_at_segment_end=score_break_at_segment_end, language=args.language)
 
         results[full_metric_name] = metric_score
 
