@@ -49,10 +49,12 @@ def reversibly_tokenize_segments(
     punctuation tokens.
     """
 
+    tokenizer = get_sacrebleu_tokenizer(language)
+
     if keep_punctuation_attached:
-        tokenizer = lambda string: _reattach_punctuation(get_sacrebleu_tokenizer(language)(string))
+        tokenize_function = lambda string: _reattach_punctuation(tokenizer(string))
     else:
-        tokenizer = get_sacrebleu_tokenizer(language)
+        tokenize_function = tokenizer
 
     tokenized_segments = []
     words_are_timed = None
@@ -63,7 +65,7 @@ def reversibly_tokenize_segments(
         for word in segment.word_list:
             assert word, "Words must not be empty."
 
-            tokens = tokenizer(word.string).split()
+            tokens = tokenize_function(word.string).split()
             assert tokens, "Tokenizer deleted word."
 
             for token_index, token in enumerate(tokens):
