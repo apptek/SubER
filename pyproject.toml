@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "subtitle-edit-rate"
 version = "0.4.0"
 dependencies = [
-    "sacrebleu==2.5.1",
+    "sacrebleu==2.6.0",
     "jiwer==4.0.0",
     "numpy",
     "regex",
@@ -34,8 +34,8 @@ classifiers = [
 
 [project.optional-dependencies]
 # Installs MeCab for Japanese/Korean word segmentation.
-ja = ["sacrebleu[ja]==2.5.1"]
-ko = ["sacrebleu[ko]==2.5.1"]
+ja = ["sacrebleu[ja]==2.6.0"]
+ko = ["sacrebleu[ko]==2.6.0"]
 
 [project.urls]
 Homepage = "https://github.com/apptek/SubER"
