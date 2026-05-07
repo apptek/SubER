@@ -166,7 +166,8 @@ def _tokenize_words(words: List[TimedWord], language: str = None) -> List[TimedW
         tokens = tokenized_word_string.split()
 
         if len(tokens) == 1:
-            assert tokenized_word_string == word.string
+            # TercomTokenizer converts escaped XML like '&amp;'.
+            assert tokenized_word_string == word.string or word.string.startswith("&") and word.string.endswith(";")
             output_words.append(word)
             continue
 
